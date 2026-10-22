@@ -1,13 +1,17 @@
 import {getJob} from '../../../../lib/jobs';
 import {resumeRequest,resumeDraft,validateEvidence,draftJsonSchema,resumeSystemPrompt} from '../../../../lib/resume';
 import {reserveResumeRequest,ResumeLimitError} from '../../../../lib/resume-limits';
+import {siteOrigin} from '../../../../lib/site';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
 const noStore={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 export async function GET(){return Response.json({available:!!process.env.GROQ_API_KEY,provider:'Groq',perConnectionDailyLimit:3},{headers:noStore});}
 export async function POST(req:Request){
-  if(req.headers.get('origin')!==new URL(req.url).origin)return Response.json({error:'Open this form on JobVeylo to continue.'},{status:403,headers:noStore});
+  // Netlify forwards requests through an internal function origin. Compare with
+  // the configured public origin rather than that internal request URL.
+  const expectedOrigin=new URL(process.env.NODE_ENV==='production'?siteOrigin:req.url).origin;
+  if(req.headers.get('origin')!==expectedOrigin)return Response.json({error:'Open this form on JobVeylo to continue.'},{status:403,headers:noStore});
   const key=process.env.GROQ_API_KEY;
   if(!key)return Response.json({error:'AI tailoring is not enabled yet. You can fill, edit and download a resume without AI.'},{status:503,headers:noStore});
   try{
