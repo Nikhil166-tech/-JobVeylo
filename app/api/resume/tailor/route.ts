@@ -33,6 +33,7 @@ export async function POST(req:Request){
     });
     if(!result.ok){
       if(result.status===429)return Response.json({error:'Groq’s free quota is temporarily busy. Wait a minute before trying again.'},{status:429,headers:{...noStore,'Retry-After':'60'}});
+      if(result.status===401||result.status===403)return Response.json({error:'The AI connection needs an update by the site owner. You can still build, edit and download a resume without AI.'},{status:503,headers:noStore});
       return Response.json({error:'The AI service is unavailable. Your source text is still in the form; try again later or edit your resume manually.'},{status:502,headers:noStore});
     }
     const response=await result.json();
