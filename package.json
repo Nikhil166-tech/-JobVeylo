@@ -1,0 +1,34 @@
+{
+  "name": "jobveylo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@netlify/database": "latest",
+    "@netlify/identity": "latest",
+    "cheerio": "^1.2.0",
+    "clsx": "2.1.1",
+    "ipaddr.js": "^2.5.0",
+    "next": "^16.3.8",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "tailwind-merge": "3.6.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "latest",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.9.3"
+  }
+}

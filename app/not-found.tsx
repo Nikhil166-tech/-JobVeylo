@@ -1,0 +1,1 @@
+import { Header,Footer } from '../components/site-shell';export default function Missing(){return <><Header/><main className="wrap section"><h1>That job isn’t available here.</h1><p>The link may be incorrect, or the listing may not be published.</p><a className="primary" href="/#jobs">Browse opportunities ↗</a></main><Footer/></>}

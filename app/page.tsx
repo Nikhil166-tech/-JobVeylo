@@ -1,0 +1,1 @@
+import Legacy from './legacy'; export default function Home(){return <Legacy/>}

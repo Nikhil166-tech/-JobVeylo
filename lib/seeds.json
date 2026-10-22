@@ -1,0 +1,79 @@
+[
+  {
+    "id": "amazon-alexa-ai",
+    "company": "Amazon",
+    "initial": "a",
+    "title": "Software Dev Engineer, Alexa AI",
+    "location": "Bengaluru, India",
+    "region": "India",
+    "category": "Private",
+    "experience": "2+ years",
+    "remote": false,
+    "level": "Experienced",
+    "tags": [
+      "Engineering",
+      "Artificial intelligence"
+    ],
+    "salary": "Not disclosed",
+    "deadline": "Not specified",
+    "checked": "2026-10-18",
+    "url": "https://amazon.jobs/en-gb/jobs/10568545/software-dev-engineer-alexa-ai",
+    "summary": "Build software supporting Alexa’s AI services, with a focus on scalable applications and distributed systems.",
+    "requirements": [
+      "At least two years of professional software development experience, excluding internships.",
+      "Programming experience in at least one language.",
+      "A computer science degree or equivalent is preferred."
+    ],
+    "details": "The work involves collaborating with engineering teams, designing services and delivering software in an agile environment. Read the employer’s full description before applying.",
+    "note": "The employer page displayed an application link when reviewed. No closing date or salary was stated.",
+    "status": "published",
+    "version": 0,
+    "sourceType": "Employer",
+    "education": "See eligibility below",
+    "batch": "Not specified",
+    "fees": "Not specified",
+    "selection": "Not specified by the employer",
+    "howToApply": "Open the recruitment page, read the current requirements, and follow the employer’s application process.",
+    "publishedAt": "2026-10-18",
+    "updatedAt": "2026-10-18"
+  },
+  {
+    "id": "safe-customer-success",
+    "company": "Safe Security",
+    "initial": "S",
+    "title": "Customer Success Advisor",
+    "location": "Remote, Americas",
+    "region": "Americas",
+    "category": "Private",
+    "experience": "5+ years",
+    "remote": true,
+    "level": "Experienced",
+    "tags": [
+      "Customer success",
+      "Cybersecurity"
+    ],
+    "salary": "Not disclosed",
+    "deadline": "Not specified",
+    "checked": "2026-10-18",
+    "url": "https://jobs.lever.co/safe/8543068c-35f2-4115-bff6-6b6372d65e5d",
+    "summary": "Support enterprise customers using cybersecurity technology, and help them translate technical risk into business outcomes.",
+    "requirements": [
+      "Five or more years in customer success, risk consulting or management consulting.",
+      "Experience with security, exposure management or governance and risk.",
+      "Ability to communicate with executives and manage complex accounts.",
+      "The listing specifies 30% travel."
+    ],
+    "details": "This full-time role focuses on customer relationships, measurable adoption outcomes and coordination with technical teams. Remote eligibility is limited to the Americas; it is not listed as work-from-anywhere.",
+    "note": "An application link was present on the employer’s recruitment page when reviewed. Confirm location and work authorization with the employer.",
+    "status": "published",
+    "version": 0,
+    "sourceType": "Employer",
+    "education": "See eligibility below",
+    "batch": "Not specified",
+    "fees": "Not specified",
+    "selection": "Not specified by the employer",
+    "howToApply": "Open the recruitment page, read the current requirements, and follow the employer’s application process.",
+    "publishedAt": "2026-10-18",
+    "updatedAt": "2026-10-18"
+  }
+]

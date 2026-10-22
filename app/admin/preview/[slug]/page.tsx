@@ -1,0 +1,3 @@
+import { notFound } from 'next/navigation';import { requireEditor } from '../../../../lib/editor-auth';import { getJob } from '../../../../lib/jobs';import JobArticle from '../../../../components/job-article';import { Header,Footer } from '../../../../components/site-shell';
+export const dynamic='force-dynamic';export const metadata={title:'Draft preview | JobVeylo',robots:{index:false,follow:false}};
+export default async function Page({params}:{params:Promise<{slug:string}>}){const {slug}=await params;await requireEditor();const j=await getJob(slug);if(!j)notFound();return <><Header/><main><JobArticle job={j} preview/></main><Footer/></>}

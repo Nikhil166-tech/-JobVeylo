@@ -1,0 +1,8 @@
+node_modules/
+.next/
+.netlify/
+.env*
+!.env.example
+*.tsbuildinfo
+*.log
+.DS_Store

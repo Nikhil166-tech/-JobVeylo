@@ -1,0 +1,63 @@
+# JobVeylo
+
+Job listings website for Indian government recruitment and private-sector openings worldwide.
+
+Live site: https://jobveylo.netlify.app
+
+## Stack
+
+- Next.js App Router, React and TypeScript
+- Netlify hosting and Next.js runtime
+- Netlify Database (PostgreSQL)
+- Invite-only Netlify Identity for the owner dashboard
+
+## Develop
+
+Use Node.js 24 (the production version), then run:
+
+```sh
+npm ci
+npm run dev
+```
+
+The public job APIs and owner dashboard require the linked Netlify Database and Identity runtime. For full local integration, use Netlify CLI, sign in to your own account, link this checkout to the existing `jobveylo` project, and run `netlify dev`. Never commit login tokens or database connection strings.
+
+```sh
+netlify login
+netlify link
+netlify dev
+```
+
+## Check and deploy
+
+```sh
+npm run typecheck
+node --experimental-strip-types --test tests/job-import.test.mjs
+npm run build
+netlify deploy --prod --context production
+```
+
+The build uses Webpack for compatibility with the Netlify packager on Windows. `netlify.toml` contains the hosting configuration. Production publication updates the existing site; pushing code to GitHub alone does not deploy it until Git-based deployment is configured in Netlify.
+
+## Manage jobs
+
+Open `/admin`, sign in with the invited owner account, and paste the URL for one opening. The importer fills the form and flags missing information. Review the source, correct the fields, confirm review, and publish. Blocked pages and PDF notices support a pasted-text fallback. Use **Copy community post** after publishing to copy a short message with the permanent job link.
+
+The importer reads JSON-LD JobPosting data or page text. It does not use a paid AI service and cannot extract every field from every website. Missing details require editorial review.
+
+## Files
+
+- `app/`: pages and API routes
+- `components/`: job pages, sharing, admin import panel and UI
+- `lib/`: validation, extraction, authentication and database access
+- `public/`: public assets and the active stylesheet, `style.css`
+- `netlify/database/migrations/`: database schema and initial published listings
+- `tests/job-import.test.mjs`: extraction and network-target validation tests
+
+## Data and configuration
+
+Current jobs and later admin edits live in Netlify Database, not in Git. The migrations include the initial two listings only; use database backups to preserve later job content. Cloning this repository does not copy live users or current database records.
+
+Owner authorization is configured in `lib/editor-auth.ts`; login and invitation UI is in `app/admin/login/page.tsx`. Contact details and the WhatsApp channel are in `lib/site.ts`. The production origin comes from Netlify's `URL` environment variable; `NEXT_PUBLIC_SITE_URL` is an optional alternative for other environments.
+
+Build output, dependencies, local environment files and Netlify CLI state are excluded through `.gitignore`.

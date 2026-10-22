@@ -1,0 +1,110 @@
+{
+  "about": {
+    "title": "About JobVeylo",
+    "intro": "Clear job details. Original sources. A more informed next step.",
+    "sections": [
+      [
+        "What we do",
+        "JobVeylo is an independent job-information website covering Indian government recruitment and private-sector roles worldwide. We summarise recruitment notices and link to the original application destination. We are not an employer, recruitment agency or government service."
+      ],
+      [
+        "What you can expect",
+        "Job pages explain the stated location, experience, qualifications, salary and deadline. If a source does not provide a detail, we label it as not specified or not disclosed. Remote jobs may still have country or work-authorisation restrictions."
+      ],
+      [
+        "Free to browse",
+        "JobVeylo does not charge readers to view listings or application links, collect applications, promise interviews, or guarantee placements. Applications are handled by the linked recruiting organisation."
+      ],
+      [
+        "How we work",
+        "Listings go through editorial review before publication. Read our editorial policy for source checks, corrections and how we handle expired openings."
+      ]
+    ]
+  },
+  "editorial": {
+    "title": "Editorial policy",
+    "intro": "How we select, check, update and correct job information.",
+    "sections": [
+      [
+        "Source selection",
+        "We prioritise employer career pages and official government recruitment notifications. A third-party job board may help us discover a role, but the source type and application destination must be clearly identified. A listing should never imply employer or government endorsement of JobVeylo."
+      ],
+      [
+        "Before publication",
+        "The editor checks the job title, recruiting organisation, application link, location restrictions, eligibility and stated deadline against the source. Summaries must distinguish required qualifications from preferences. We do not invent salaries, vacancy counts, selection rounds or graduation batches."
+      ],
+      [
+        "What “source checked” means",
+        "The date records when an editor reviewed the source. It is not an independent guarantee of hiring, safety, accuracy or continuing availability. Sources can change after review; applicants should read the latest original notice before applying."
+      ],
+      [
+        "Updates and closed jobs",
+        "When a listing has a recorded closing date, JobVeylo marks it closed after that date using India time. The source’s exact deadline and time zone take priority. Listings without deadlines need manual review. Closed pages remain useful for reference, with their application buttons removed."
+      ],
+      [
+        "Corrections",
+        "Email us with the JobVeylo page URL, the detail that needs correction and an original source or amended notice. We review reports and update, close or remove listings as appropriate. We do not promise a fixed response time."
+      ],
+      [
+        "Advertising and sponsorships",
+        "No ad network or paid placement programme is currently active. If introduced, advertising, sponsorships and affiliate relationships will be clearly disclosed. Payment will not replace source review or imply a hiring guarantee."
+      ]
+    ]
+  },
+  "privacy": {
+    "title": "Privacy & browser storage",
+    "intro": "What this version of JobVeylo stores and why.",
+    "sections": [
+      [
+        "Reading and saving jobs",
+        "JobVeylo does not collect CVs, job applications, candidate profiles or newsletter subscriptions. Saved-job identifiers are stored in your browser under jv-saved. Older versions may also have local drafts under jv-drafts. This data stays on that browser unless you export or share it."
+      ],
+      [
+        "Owner dashboard",
+        "Netlify Identity manages owner sign-in and authentication cookies. Only the authorised owner account can edit jobs. Editorial drafts, published listings and their status are stored in Netlify Database. Drafts are available only through the owner dashboard; published listings are public."
+      ],
+      [
+        "Hosting, sign-in and fonts",
+        "Our hosting and sign-in providers may process connection information, authentication cookies and technical logs to operate and secure the site. Fonts are requested from Google Fonts, which receives request information such as your IP address. Provider retention and processing are governed by their own policies."
+      ],
+      [
+        "Email enquiries",
+        "If you email us, your address, message and any attachments are processed by our email provider and used to respond to or resolve the enquiry. Please do not send passwords, identity documents, banking information or CVs. We have not configured an automatic deletion schedule for correspondence."
+      ],
+      [
+        "Sharing and external links",
+        "Copy link uses your browser clipboard after you click the button. Share opening uses your device’s sharing interface when supported. Content is sent to another app only when you choose to share it. Employer websites and social platforms have their own privacy policies."
+      ],
+      [
+        "Analytics and advertising",
+        "JobVeylo currently includes no advertising or analytics scripts. This notice will be updated before introducing new data collection, tracking or advertising features."
+      ],
+      [
+        "Your choices",
+        "You can clear local saved jobs and older drafts below or through your browser settings. Clearing local storage does not remove listings stored in the owner dashboard. Contact us with privacy questions or requests about information you have sent us."
+      ]
+    ]
+  },
+  "disclaimer": {
+    "title": "Job information disclaimer",
+    "intro": "Use JobVeylo to discover opportunities, then check the original notice.",
+    "sections": [
+      [
+        "Independent information",
+        "JobVeylo is not affiliated with the employers or government bodies listed unless a relationship is explicitly disclosed. Employer names identify recruitment sources; they do not imply endorsement."
+      ],
+      [
+        "No hiring guarantee",
+        "Listings and career guides are informational. Availability, eligibility, selection processes and application requirements may change. We cannot guarantee an interview, offer, placement, salary or successful application. The recruiting organisation’s current notice takes priority."
+      ],
+      [
+        "Fees and sensitive information",
+        "JobVeylo does not request payment to apply for a job. Some official recruitment processes may specify an application fee; verify it in the original notice and use the official payment process. Do not share passwords or OTPs, or send payments to someone claiming to guarantee selection through JobVeylo."
+      ],
+      [
+        "Applications and disputes",
+        "Applications take place on external websites. Direct application-status questions to the recruiting organisation. Report inaccurate or suspicious JobVeylo listings through our contact page, including the page URL and evidence."
+      ]
+    ]
+  }
+}
