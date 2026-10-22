@@ -57,7 +57,11 @@
     "sections": [
       [
         "Reading and saving jobs",
-        "JobVeylo does not collect CVs, job applications, candidate profiles or newsletter subscriptions. Saved-job identifiers are stored in your browser under jv-saved. Older versions may also have local drafts under jv-drafts. This data stays on that browser unless you export or share it."
+        "Saved-job identifiers are stored in your browser under jv-saved. Older versions may have drafts under jv-drafts. Job applications are submitted on employer websites. Resume-builder content stays in page memory until you clear it, reload or leave; we do not save it to local storage."
+      ],
+      [
+        "Resume builder and AI processing",
+        "Uploaded PDF, Word and text files are read on your device. If you choose AI tailoring and consent, extracted or typed resume text and the selected job details are sent through our server to Groq. Contact fields are added locally to downloads; automated removal from source text may miss personal information. Review your text before sending. We do not save resume content or AI drafts in our database or intentionally log them. We store daily usage counters with a keyed connection identifier to enforce free limits; counters expire after the day and are removed during later requests. Hosting providers may retain technical connection logs. Groq processes submitted content under its own privacy and data policies and may retain limited information for security or troubleshooting. We do not promise zero provider retention. Clear resume data removes the current form and draft; it cannot recall information already sent to a provider. AI drafts can contain mistakes and must be reviewed before use."
       ],
       [
         "Owner dashboard",

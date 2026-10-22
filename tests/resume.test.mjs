@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {resumeRequest,validateEvidence,redactContact,blankContact} from '../lib/resume.ts';
+const source='Built a Python dashboard for a college project in 2024. Analysed 200 records and presented results to the course team.';
+const draft=()=>({summary:{text:'Built a Python dashboard in 2024.',sourceQuotes:['Built a Python dashboard for a college project in 2024.']},skills:['Python'],sections:[{title:'Projects',content:'Analysed 200 records.',sourceQuotes:['Analysed 200 records']}],missingRequirements:[],changes:[]});
+ test('accepts supported evidence and preserves original metrics',()=>assert.doesNotThrow(()=>validateEvidence(draft(),source)));
+ test('rejects invented evidence, skills and metrics',()=>{let d=draft();d.skills=['Java'];assert.throws(()=>validateEvidence(d,source));d=draft();d.sections[0].content='Analysed 500 records.';assert.throws(()=>validateEvidence(d,source));d=draft();d.summary.sourceQuotes=['Worked at Example Inc'];assert.throws(()=>validateEvidence(d,source));});
+ test('requires consent, job slug and bounded source text',()=>{assert.equal(resumeRequest.safeParse({jobId:'example-job',resumeText:source.repeat(2),consent:true}).success,true);for(const bad of [{consent:false},{jobId:'../admin'},{resumeText:'x'.repeat(10001)}])assert.equal(resumeRequest.safeParse({jobId:'example-job',resumeText:source.repeat(2),consent:true,...bad}).success,false)});
+ test('removes explicit contact fields, emails and web links',()=>{const out=redactContact('Sample Person hello@example.org https://example.org Python',{...blankContact(),name:'Sample Person'});assert.ok(!out.includes('Sample Person'));assert.ok(!out.includes('hello@example.org'));assert.ok(!out.includes('https://'));assert.ok(out.includes('Python'));});

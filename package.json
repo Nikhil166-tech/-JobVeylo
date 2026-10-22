@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "node scripts/prepare-resume-assets.mjs",
+    "predev": "node scripts/prepare-resume-assets.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -17,8 +19,12 @@
     "@netlify/identity": "latest",
     "cheerio": "^1.2.0",
     "clsx": "2.1.1",
+    "docx": "^9.13.0",
+    "fflate": "^0.8.3",
     "ipaddr.js": "^2.5.0",
+    "jspdf": "^4.2.1",
     "next": "^16.3.8",
+    "pdfjs-dist": "^6.4.299",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "tailwind-merge": "3.6.0",
