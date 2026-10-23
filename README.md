@@ -2,7 +2,7 @@
 
 Mobile-first job listings for Indian government recruitment and private-sector openings worldwide.
 
-Production target: https://jobveylo.itharajunikhil61.workers.dev
+Production target: https://jobveylo.jobveylo.workers.dev
 
 ## Stack and development
 
@@ -21,7 +21,7 @@ Apply the local schema with `npx wrangler d1 migrations apply jobveylo-db --loca
 
 Configure these Worker secrets privately through Cloudflare or `wrangler secret put`:
 
-- `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`: a GitHub OAuth app with homepage equal to the production origin and callback `https://jobveylo.itharajunikhil61.workers.dev/api/auth/callback`.
+- `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`: a GitHub OAuth app with homepage equal to the production origin and callback `https://jobveylo.jobveylo.workers.dev/api/auth/callback`.
 - `GROQ_API_KEY`: required for AI resume tailoring. The manual builder works without it.
 - Optional `GROQ_RESUME_MODEL`: defaults to `openai/gpt-oss-20b`.
 

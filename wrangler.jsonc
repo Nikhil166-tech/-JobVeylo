@@ -28,7 +28,7 @@
     "enabled": false
   },
   "vars": {
-    "SITE_URL": "https://jobveylo.itharajunikhil61.workers.dev",
+    "SITE_URL": "https://jobveylo.jobveylo.workers.dev",
     "OWNER_GITHUB_ID": "135293869"
   },
   "d1_databases": [
