@@ -65,11 +65,11 @@
       ],
       [
         "Owner dashboard",
-        "Netlify Identity manages owner sign-in and authentication cookies. Only the authorised owner account can edit jobs. Editorial drafts, published listings and their status are stored in Netlify Database. Drafts are available only through the owner dashboard; published listings are public."
+        "GitHub verifies the authorised owner account. JobVeylo requests public identity access only, not repository access. An HttpOnly, Secure session cookie keeps the owner signed in for up to eight hours. Hashed session identifiers and their expiry are stored in Cloudflare D1; signing out revokes the session. Editorial drafts, published listings and their status are stored in D1. Drafts are restricted to the owner dashboard; published listings are public."
       ],
       [
         "Hosting, sign-in and fonts",
-        "Our hosting and sign-in providers may process connection information, authentication cookies and technical logs to operate and secure the site. Fonts are requested from Google Fonts, which receives request information such as your IP address. Provider retention and processing are governed by their own policies."
+        "Cloudflare hosts the website and database, and GitHub provides owner sign-in. These providers may process connection information, authentication cookies and technical logs to operate and secure the site. Provider retention and processing are governed by their own policies."
       ],
       [
         "Email enquiries",

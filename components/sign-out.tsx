@@ -1,3 +1,3 @@
 'use client';
-import {logout} from '@netlify/identity';
-export default function SignOut(){return <button className="secondary" onClick={async()=>{await logout();location.href='/admin/login'}}>Sign out</button>}
+import {useState} from 'react';
+export default function SignOut(){const [busy,setBusy]=useState(false),[error,setError]=useState('');return <><button className="secondary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{const result=await fetch('/api/auth/logout',{method:'POST'});if(!result.ok)throw Error();location.href='/admin/login'}catch{setError('Sign-out failed. Please try again.');setBusy(false)}}}>{busy?'Signing out…':'Sign out'}</button>{error&&<span role="alert">{error}</span>}</>}

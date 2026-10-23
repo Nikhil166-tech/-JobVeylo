@@ -1,18 +1,16 @@
 import {getJob} from '../../../../lib/jobs';
 import {resumeRequest,resumeDraft,validateEvidence,draftJsonSchema,resumeSystemPrompt} from '../../../../lib/resume';
 import {reserveResumeRequest,ResumeLimitError} from '../../../../lib/resume-limits';
-import {siteOrigin} from '../../../../lib/site';
+import {bindings,sameOrigin} from '../../../../lib/platform';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
 const noStore={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
-export async function GET(){return Response.json({available:!!process.env.GROQ_API_KEY,provider:'Groq',perConnectionDailyLimit:3},{headers:noStore});}
+export async function GET(){return Response.json({available:!!bindings().GROQ_API_KEY,provider:'Groq',perConnectionDailyLimit:3},{headers:noStore});}
 export async function POST(req:Request){
-  // Netlify forwards requests through an internal function origin. Compare with
-  // the configured public origin rather than that internal request URL.
-  const expectedOrigin=new URL(process.env.NODE_ENV==='production'?siteOrigin:req.url).origin;
-  if(req.headers.get('origin')!==expectedOrigin)return Response.json({error:'Open this form on JobVeylo to continue.'},{status:403,headers:noStore});
-  const key=process.env.GROQ_API_KEY;
+  if(!sameOrigin(req))return Response.json({error:'Open this form on JobVeylo to continue.'},{status:403,headers:noStore});
+  const env=bindings();
+  const key=env.GROQ_API_KEY;
   if(!key)return Response.json({error:'AI tailoring is not enabled yet. You can fill, edit and download a resume without AI.'},{status:503,headers:noStore});
   try{
     const reader=req.body?.getReader();if(!reader)return Response.json({error:'Resume text is required.'},{status:400,headers:noStore});
@@ -23,23 +21,24 @@ export async function POST(req:Request){
     if(!parsed.success)return Response.json({error:parsed.error.issues[0].message},{status:400,headers:noStore});
     const job=await getJob(parsed.data.jobId);
     if(!job || job.status!=='published')return Response.json({error:'Choose a currently published job before tailoring your resume.'},{status:400,headers:noStore});
-    const ip=req.headers.get('x-nf-client-connection-ip') || (process.env.NODE_ENV!=='production'?'local-preview':'');
+    const ip=req.headers.get('cf-connecting-ip') || (new URL(env.SITE_URL).hostname==='localhost'?'local-preview':'');
     if(!ip)return Response.json({error:'The AI service could not verify this connection. Please try again later.'},{status:503,headers:noStore});
     await reserveResumeRequest(ip,key);
     const selectedJob={title:job.title,company:job.company,location:job.location,experience:job.experience,education:job.education,requirements:job.requirements,description:job.details.slice(0,4500)};
     const result=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(45000),
-      body:JSON.stringify({model:process.env.GROQ_RESUME_MODEL || 'openai/gpt-oss-20b',reasoning_effort:'low',max_completion_tokens:3500,response_format:{type:'json_schema',json_schema:{name:'tailored_resume',strict:true,schema:draftJsonSchema}},messages:[{role:'system',content:resumeSystemPrompt},{role:'user',content:JSON.stringify({candidateResume:parsed.data.resumeText,selectedJob})}]}),
+      body:JSON.stringify({model:env.GROQ_RESUME_MODEL || 'openai/gpt-oss-20b',reasoning_effort:'low',max_completion_tokens:3500,response_format:{type:'json_schema',json_schema:{name:'tailored_resume',strict:true,schema:draftJsonSchema}},messages:[{role:'system',content:resumeSystemPrompt},{role:'user',content:JSON.stringify({candidateResume:parsed.data.resumeText,selectedJob})}]}),
     });
     if(!result.ok){
       if(result.status===429)return Response.json({error:'Groq’s free quota is temporarily busy. Wait a minute before trying again.'},{status:429,headers:{...noStore,'Retry-After':'60'}});
       if(result.status===401||result.status===403)return Response.json({error:'The AI connection needs an update by the site owner. You can still build, edit and download a resume without AI.'},{status:503,headers:noStore});
       return Response.json({error:'The AI service is unavailable. Your source text is still in the form; try again later or edit your resume manually.'},{status:502,headers:noStore});
     }
-    const response=await result.json();
-    if(response.choices?.[0]?.finish_reason!=='stop')return Response.json({error:'The AI draft was incomplete. Try a shorter resume or edit it manually.'},{status:502,headers:noStore});
+    const response=await result.json() as {choices?:{finish_reason?:string;message:{content:string}}[]};
+    const choice=response.choices?.[0];
+    if(choice?.finish_reason!=='stop')return Response.json({error:'The AI draft was incomplete. Try a shorter resume or edit it manually.'},{status:502,headers:noStore});
     let draft;
-    try{draft=resumeDraft.parse(JSON.parse(response.choices[0].message.content));validateEvidence(draft,parsed.data.resumeText);}catch{return Response.json({error:'The AI draft did not pass the source-evidence checks. Try again later or edit your resume manually.'},{status:502,headers:noStore});}
+    try{draft=resumeDraft.parse(JSON.parse(choice.message.content));validateEvidence(draft,parsed.data.resumeText);}catch{return Response.json({error:'The AI draft did not pass the source-evidence checks. Try again later or edit your resume manually.'},{status:502,headers:noStore});}
     return Response.json({draft},{headers:noStore});
   }catch(error){
     if(error instanceof ResumeLimitError)return Response.json({error:error.message},{status:429,headers:{...noStore,'Retry-After':String(error.retryAfter)}});

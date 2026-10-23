@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jobveylo",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "main": "vinext/server/fetch-handler",
+  "assets": {
+    "directory": "dist/client",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/*",
+      "!/_next/static/*",
+      "!/*/_next/static/*",
+      "!/style.css",
+      "!/app.js",
+      "!/fonts/*",
+      "!/pdf.worker.min.mjs",
+      "!/pdfjs-LICENSE"
+    ]
+  },
+  "account_id": "a354137d11d3cc1a66ae5d8e5d559050",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "SITE_URL": "https://jobveylo.itharajunikhil61.workers.dev",
+    "OWNER_GITHUB_ID": "135293869"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jobveylo-db",
+      "database_id": "83a413f5-ee1a-4d13-9782-927ede1f20e1",
+      "migrations_dir": "cloudflare/migrations"
+    }
+  ]
+}

@@ -1,71 +1,64 @@
 # JobVeylo
 
-Job listings website for Indian government recruitment and private-sector openings worldwide.
+Mobile-first job listings for Indian government recruitment and private-sector openings worldwide.
 
-Live site: https://jobveylo.netlify.app
+Production target: https://jobveylo.itharajunikhil61.workers.dev
 
-## Stack
+## Stack and development
 
-- Next.js App Router, React and TypeScript
-- Netlify hosting and Next.js runtime
-- Netlify Database (PostgreSQL)
-- Invite-only Netlify Identity for the owner dashboard
-
-## Develop
-
-Use Node.js 24 (the production version), then run:
+Next.js App Router and React, built with Vinext for Cloudflare Workers. Cloudflare D1 stores listings, hashed owner sessions and expiring AI usage records. Use Node.js 24.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-The public job APIs and owner dashboard require the linked Netlify Database and Identity runtime. For full local integration, use Netlify CLI, sign in to your own account, link this checkout to the existing `jobveylo` project, and run `netlify dev`. Never commit login tokens or database connection strings.
+Apply the local schema with `npx wrangler d1 migrations apply jobveylo-db --local`. Local D1 is separate from production. For login tests, use an HTTPS development callback registered in a separate GitHub OAuth app; session cookies require HTTPS.
 
-```sh
-netlify login
-netlify link
-netlify dev
-```
+## Production configuration
+
+`wrangler.jsonc` defines the Worker, D1 binding, production origin and immutable owner GitHub ID. No paid cache, storage or image services are required.
+
+Configure these Worker secrets privately through Cloudflare or `wrangler secret put`:
+
+- `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`: a GitHub OAuth app with homepage equal to the production origin and callback `https://jobveylo.itharajunikhil61.workers.dev/api/auth/callback`.
+- `GROQ_API_KEY`: required for AI resume tailoring. The manual builder works without it.
+- Optional `GROQ_RESUME_MODEL`: defaults to `openai/gpt-oss-20b`.
+
+Owner sign-in accepts only GitHub ID `135293869` (`Nikhil166-tech`). OAuth uses state and PKCE, requests no repository or private-email scopes, rejects tokens with additional scopes, and stores only a hash of the eight-hour session token.
+
+Never commit secrets, Wrangler credentials, `.dev.vars`, database exports or build output.
 
 ## Check and deploy
 
 ```sh
 npm run typecheck
-node --experimental-strip-types --test tests/job-import.test.mjs
+node --experimental-strip-types --test tests/*.test.mjs
 npm run build
-netlify deploy --prod --context production
+npx wrangler deploy --dry-run --config dist/server/wrangler.json
+npm run deploy
 ```
 
-The build uses Webpack for compatibility with the Netlify packager on Windows. `netlify.toml` contains the hosting configuration. Production publication updates the existing site; pushing code to GitHub alone does not deploy it until Git-based deployment is configured in Netlify.
+Apply schema changes explicitly with `npx wrangler d1 migrations apply jobveylo-db --remote` before deploying code that requires them. The compressed Worker is approximately 1.2 MB; recheck size and free-plan resource limits when adding features.
 
-## Manage jobs
+A Git push does not publish until Workers Builds is connected. For that connection, use branch `main`, Node 24, build command `npm run build`, and deploy command `npx wrangler deploy --config dist/server/wrangler.json`. Select this repository through Cloudflare's Git integration. Restrict production secrets to trusted builds. Do not run database migrations automatically on every commit.
 
-Open `/admin`, sign in with the invited owner account, and paste the URL for one opening. The importer fills the form and flags missing information. Review the source, correct the fields, confirm review, and publish. Blocked pages and PDF notices support a pasted-text fallback. Use **Copy community post** after publishing to copy a short message with the permanent job link.
+## Jobs and backups
 
-The importer reads JSON-LD JobPosting data or page text. It does not use a paid AI service and cannot extract every field from every website. Missing details require editorial review.
+Open `/admin`, sign in with the owner GitHub account and paste one opening URL. Review extracted information, correct missing fields, confirm review and publish. Blocked pages and PDF notices support pasted source text. The importer does not require an AI API and never publishes without review.
 
-## Files
+Published pages use stable `/jobs/:slug` URLs. Job details, qualifications, selection stages and application instructions appear as readable points. Unknown stages are not invented. Use **Copy community post** to share the permanent link.
 
-- `app/`: pages and API routes
-- `components/`: job pages, sharing, admin import panel and UI
-- `lib/`: validation, extraction, authentication and database access
-- `public/`: public assets and the active stylesheet, `style.css`
-- `netlify/database/migrations/`: database schema and initial published listings
-- `tests/job-import.test.mjs`: extraction and network-target validation tests
+Current jobs and edits live in D1, not Git. Export a backup with `npx wrangler d1 export jobveylo-db --remote --output <private-backup-path>`. Keep exports outside the repository. Historical Netlify migrations contain original seed data, not a current backup.
 
-## Data and configuration
+## Resume builder
 
-Current jobs and later admin edits live in Netlify Database, not in Git. The migrations include the initial two listings only; use database backups to preserve later job content. Cloning this repository does not copy live users or current database records.
+`/resume` accepts PDF, DOCX and TXT files read in the browser, or structured form input. Visitors choose a job, consent to Groq processing, review an editable draft and download PDF or Word. Contact fields stay client-side; automatic redaction is best-effort, so visitors must review source text. Resume contents are not stored in D1 or application logs.
 
-Owner authorization is configured in `lib/editor-auth.ts`; login and invitation UI is in `app/admin/login/page.tsx`. Contact details and the WhatsApp channel are in `lib/site.ts`. The production origin comes from Netlify's `URL` environment variable; `NEXT_PUBLIC_SITE_URL` is an optional alternative for other environments.
+AI usage is capped at three requests per connection per UTC day, 20 site-wide per day and one site-wide per minute. A single conditional D1 insert reserves quotas atomically; failed upstream attempts count. Expiring HMAC records do not contain resume text or raw IP addresses. Provider processing is described in `/privacy`.
 
-Build output, dependencies, local environment files and Netlify CLI state are excluded through `.gitignore`.
+`prebuild` and `predev` prepare the PDF worker. PDF export embeds the licensed DejaVu Sans font in `public/fonts`.
 
-## Public resume builder
+## Migration status
 
-`/resume` accepts PDF, DOCX and TXT files (read locally), or structured form input. Visitors select a published job, consent to Groq processing, review an editable draft and download PDF or Word. The manual builder works without an AI key. Contact fields are kept client-side; automatic redaction is best-effort, so visitors must review source text. Resume content is not written to the database or application logs.
-
-Set `GROQ_API_KEY` in Netlify environment variables with Functions runtime scope; never commit it. Optional `GROQ_RESUME_MODEL` defaults to `openai/gpt-oss-20b` served by Groq. Free-tier availability depends on your Groq account. Requests are capped at 3 per connection/day, 20 site-wide/day and 1 site-wide/minute (UTC); failed upstream attempts count. Migration 0003 stores expiring keyed usage counters, not resume text or raw IP addresses. Provider processing and retention are covered in `/privacy`; do not promise zero retention unless configured and verified separately.
-
-Run `node --experimental-strip-types --test tests/resume.test.mjs tests/job-import.test.mjs` for validation checks. `prebuild` and `predev` prepare the PDF worker from the installed package. The PDF export embeds the licensed DejaVu Sans font in `public/fonts`.
+The three published Netlify listings have been exported and restored in Cloudflare D1. Keep Netlify until public pages, owner sign-in, editing/import and AI tailoring are verified on Cloudflare. Existing community links still point to Netlify until changed or redirected.

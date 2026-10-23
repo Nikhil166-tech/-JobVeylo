@@ -29,14 +29,13 @@ export async function POST(req:Request){
     const now=new Date().toISOString();
     const {reviewed,...fields}=d;
     const data={...fields,id,initial:d.company[0].toUpperCase(),publishedAt:old?.publishedAt||(d.status==='published'?now:''),updatedAt:now,version:d.version+1};
-    const sql=db().sql;
     const result=old
-      ?await sql`UPDATE listings SET data=${JSON.stringify(data)}::jsonb,status=${d.status},version=version+1,updated_at=${now} WHERE id=${id} AND version=${d.version} RETURNING id`
-      :await sql`INSERT INTO listings(id,data,status,version,updated_at) VALUES(${id},${JSON.stringify(data)}::jsonb,${d.status},1,${now}) ON CONFLICT DO NOTHING RETURNING id`;
-    if(!result.length)return Response.json({error:'Another update won the save. Reload and try again.'},{status:409});
+      ?await db().prepare('UPDATE listings SET data=?,source_url=?,status=?,version=version+1,updated_at=? WHERE id=? AND version=? RETURNING id').bind(JSON.stringify(data),d.url,d.status,now,id,d.version).first()
+      :await db().prepare('INSERT INTO listings(id,data,source_url,status,version,updated_at) VALUES(?,?,?,?,1,?) ON CONFLICT DO NOTHING RETURNING id').bind(id,JSON.stringify(data),d.url,d.status,now).first();
+    if(!result)return Response.json({error:'Another update won the save, or this source URL is already listed. Reload and try again.'},{status:409});
     return Response.json({job:data,url:'/jobs/'+id},{headers:noStore});
   }catch(e){
-    if((e as {code?:string}).code==='23505')return Response.json({error:'This source URL already belongs to another listing.'},{status:409});
+    if(e instanceof Error&&/UNIQUE constraint failed/i.test(e.message))return Response.json({error:'This source URL already belongs to another listing.'},{status:409});
     return Response.json({error:'The listing was not saved. Please try again.'},{status:503});
   }
 }

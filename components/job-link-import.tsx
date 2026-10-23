@@ -16,9 +16,10 @@ export default function JobLinkImport({onImport,onExisting,canReplace}:{onImport
     setBusy(true);setError('');setWarnings([]);setMethod('');setExisting('');
     try {
       const res=await fetch('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,text:fallback?text:''})});
-      const data=await res.json();
+      const data=await res.json() as {existingId?:string;error?:string;job?:Record<string,unknown>;warnings?:string[];method?:string};
       if(!res.ok){setExisting(data.existingId || '');if(!data.existingId)setFallback(true);throw Error(data.error || 'Could not import this link.');}
-      onImport(data.job);setWarnings(data.warnings);setMethod(data.method);
+      if(!data.job)throw Error('The source did not return a readable opening. Paste the job text instead.');
+      onImport(data.job);setWarnings(data.warnings||[]);setMethod(data.method||'source text');
     }catch(err){setError(err instanceof Error?err.message:'Could not import this opening.');}
     finally{setBusy(false);}
   }
