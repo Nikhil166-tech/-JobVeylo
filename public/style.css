@@ -31,3 +31,14 @@ html{scroll-padding-top:130px}body{-webkit-text-size-adjust:100%}img,svg{max-wid
 @media(max-width:900px){.resume-grid{grid-template-columns:1fr}.resume-card{padding:22px}.nav nav{gap:14px;flex-wrap:wrap}.resume-page{padding-top:30px}}
 @media(max-width:600px){.resume-page{padding-bottom:32px}.resume-card{padding:18px}.resume-download button{flex:1}.nav nav a{white-space:nowrap}.resume-intro h1{letter-spacing:-.8px}.resume-card select{font-size:16px}.resume-check{font-size:13px}}
 @media(max-width:640px){.nav nav{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.nav nav a{min-height:40px}}
+/* Readable job details */
+.job-section-links{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 30px;padding:0;font-size:13px;line-height:1.4}
+.job-section-links a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:8px;background:var(--cream);text-align:center}
+.job-section-links a:hover,.job-section-links a:focus-visible{background:var(--mint);color:var(--green)}
+.job-detail-section{margin:0 0 32px;padding:26px;border:1px solid var(--line);border-radius:12px;scroll-margin-top:112px;background:#fff;overflow-wrap:anywhere}
+.job-detail-section h2{font-size:24px;line-height:1.35;margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--line);letter-spacing:-.5px}
+.job-detail-group+ .job-detail-group{margin-top:26px}.job-detail-group h3{font-size:17px;line-height:1.5;margin:0 0 12px;color:var(--green)}
+.detail-layout .job-detail-points{list-style:disc;margin:0;padding-left:22px;line-height:1.8}
+.detail-layout .job-detail-points li{padding-left:5px;margin:0 0 13px}.detail-layout .job-detail-points li:last-child{margin-bottom:0}.job-detail-points li::marker{color:var(--green)}
+.job-source-note{padding:18px;background:var(--cream);border-radius:8px}.job-source-note strong{display:block;margin-bottom:12px;font-size:15px}.job-section-note{font-size:14px;color:var(--muted);line-height:1.7}.job-detail-intro{line-height:1.8}.job-detail-section .overview{margin:0}
+@media(max-width:640px){.job-section-links{display:flex;gap:8px;grid-column:auto;grid-row:auto;justify-content:flex-start;order:initial;width:auto;margin:20px 0 24px;padding:0;font-size:13px}.job-section-links a{flex:0 1 auto;min-height:44px;padding:10px 12px}.job-detail-section{padding:20px 17px;margin-bottom:22px;scroll-margin-top:160px}.job-detail-section h2{font-size:21px;line-height:1.4}.job-detail-group h3{font-size:17px}.detail-layout .job-detail-points{line-height:1.8;padding-left:20px}.detail-layout .job-detail-points li{padding-left:3px;margin-bottom:14px}}
