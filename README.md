@@ -57,7 +57,9 @@ Current jobs and edits live in D1, not Git. Export a backup with `npx wrangler d
 
 AI usage is capped at three requests per connection per UTC day, 20 site-wide per day and one site-wide per minute. A single conditional D1 insert reserves quotas atomically; failed upstream attempts count. Expiring HMAC records do not contain resume text or raw IP addresses. Provider processing is described in `/privacy`.
 
-`prebuild` and `predev` prepare the PDF worker. PDF export embeds the licensed DejaVu Sans font in `public/fonts`.
+The ATS Classic template uses a single-column document body, standard section headings, 11-point text, real bullet lists and 18 mm margins. Visitors can preview or edit the draft and choose A4 or US Letter for PDF and Word downloads. Manual imports recognise standalone section headings. Long PDFs flow across pages while role titles stay with their dates and first bullet. A small checklist highlights missing contact or education details without inventing content. Formatting does not guarantee parsing, ATS scores or interviews.
+
+`prebuild` and `predev` prepare the PDF worker. PDF export embeds the licensed DejaVu Sans regular and bold fonts in `public/fonts`; Word uses Arial.
 
 ## Migration status
 
