@@ -22,6 +22,13 @@ test('refuses non-allowlisted collection requests and does not follow blocked re
  await assert.rejects(()=>readSource(source.url,async()=>new Response('',{status:302,headers:{location:'http://localhost/private'}})),/302/);
  await assert.rejects(()=>readSource(source.url,async()=>new Response('',{status:403})),/blocks/);
 });
+test('uses Greenhouse geographic metadata and does not mistake soft skills for education',()=>{
+ const greenhouse=collectionSources.find(s=>s.kind==='greenhouse');
+ const candidate=candidateFromRow(greenhouse,{id:1,title:'Operations Manager',absolute_url:'https://boards.greenhouse.io/cloudflare/jobs/1',location:{name:'Hybrid'},metadata:[{name:'Job Posting Location',value:['Tokyo, Japan']}],content:'<p>Coordinate strategic partnerships and team operations.</p><p>Master Communicator: excellent written communication.</p>'});
+ assert.equal(candidate.job.location,'Tokyo, Japan · Hybrid');assert.equal(candidate.job.region,'Asia Pacific');assert.equal(candidate.job.education,'Not specified');
+ const fallback=candidateFromRow(greenhouse,{id:2,title:'Engineer',absolute_url:'https://boards.greenhouse.io/cloudflare/jobs/2',location:{name:'In-Office'},offices:[{name:'Bengaluru, India'}],content:'<p>Build reliable systems and maintain production services.</p><p>Master of Science in Computer Science preferred.</p>'});
+ assert.equal(fallback.job.region,'India');assert.match(fallback.job.education,/Master of Science/);
+});
 test('government discovery skips expired notices and never treats advertising PDFs as jobs',()=>{
  const govt=collectionSources.find(s=>s.kind==='employment');
  const html='<table><tr><td>01/01/2026</td><td>Example Authority</td><td>Engineer</td><td>Recruitment</td><td>31/12/2099</td></tr><tr><td>01/01/2020</td><td>Old Authority</td><td>Clerk</td><td>Recruitment</td><td>01/01/2020</td></tr></table><a href="ratecard.pdf">Rate Card</a>';

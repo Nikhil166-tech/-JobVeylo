@@ -23,7 +23,7 @@ const clean=(v:unknown,max=10000)=>typeof v!=='string'?'':(/<\/?[a-z][^>]*>|&lt;
 export function makeCollectedJob(source:CollectionSource,raw:{title:string;url:string;description:string;company?:string;location?:string;remote?:boolean;salary?:string;deadline?:string;requirements?:string[];government?:boolean}):CollectedJob{
  const description=clean(raw.description),government=!!raw.government;
  const experience=description.match(/\b\d+(?:\s*[-–]\s*\d+|\+)?\s*(?:years?|months?)[^\n.!?]{0,100}\bexperience\b/i)?.[0]?.slice(0,100)||'Not specified';
- const education=description.split('\n').find(line=>/\b(?:bachelor|master|degree|diploma|B\.?Tech)\b/i.test(line)&&line.length<500)||'Not specified';
+ const education=description.split('\n').find(line=>/\b(?:bachelor|master(?:['’]s|s)?\s+(?:degree|of)|degree|diploma|B\.?Tech)\b/i.test(line)&&line.length<500)||'Not specified';
  const location=clean(raw.location||'Not specified',150);
  const region=government||/\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Delhi|Pune|Chennai)\b/i.test(location)?'India':/\b(?:US|USA|United States|Canada|Americas|Brazil|Mexico)\b/i.test(location)?'Americas':/\b(?:Europe|UK|United Kingdom|Germany|France|London|Ireland|Netherlands)\b/i.test(location)?'Europe':/\b(?:Singapore|Australia|Japan|Asia|New Zealand)\b/i.test(location)?'Asia Pacific':/\b(?:worldwide|anywhere|global)\b/i.test(location)?'Worldwide':'Other';
  const requirements=(raw.requirements||[]).map(s=>clean(s,1000)).filter(Boolean).slice(0,30);
@@ -61,7 +61,14 @@ export function candidateFromRow(source:CollectionSource,row:any):Candidate{
   const lists=(row.lists||[]).map((entry:any)=>({title:clean(entry.text),content:clean(entry.content)}));
   description=[row.descriptionPlain||row.description,...lists.flatMap((entry:any)=>[entry.title,entry.content]),row.additionalPlain||row.additional].filter(Boolean).join('\n\n');
   requirements=lists.filter((entry:any)=>/qualif|require|essential|must.have/i.test(entry.title)).flatMap((entry:any)=>entry.content.split('\n'));
- }else{title=row.title;url=row.absolute_url;location=row.location?.name||'';description=row.content||''}
+ }else{
+  title=row.title;url=row.absolute_url;description=row.content||'';
+  const posting=row.metadata?.find((field:any)=>field.name==='Job Posting Location')?.value;
+  const places=Array.isArray(posting)?posting:typeof posting==='string'?[posting]:row.offices?.map((office:any)=>office.name)||[];
+  const geography=places.filter((value:any)=>typeof value==='string'&&value.trim()).join('; ');
+  const workplace=row.location?.name||'';
+  location=geography?geography+(workplace?' · '+workplace:''):workplace;
+ }
  return {externalId:String(row.id),discoveryOnly:false,job:makeCollectedJob(source,{title,url,location,description,requirements,salary,remote:row.isRemote===true||row.workplaceType==='remote'||/^remote\b/i.test(location)})};
 }
 export function employmentCandidates(source:CollectionSource,text:string){
