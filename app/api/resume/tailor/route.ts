@@ -1,7 +1,8 @@
 import {getJob} from '../../../../lib/jobs';
-import {resumeRequest,resumeDraft,validateEvidence,draftJsonSchema,resumeSystemPrompt} from '../../../../lib/resume';
+import {resumeRequest,resumeDraft,validateEvidence,draftJsonSchema,resumeSystemPrompt,redactContact,blankContact} from '../../../../lib/resume';
 import {reserveResumeRequest,ResumeLimitError} from '../../../../lib/resume-limits';
 import {bindings,sameOrigin} from '../../../../lib/platform';
+import {resumeJobContext,resumeTarget} from '../../../../lib/resume-job';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
@@ -24,10 +25,11 @@ export async function POST(req:Request){
     const ip=req.headers.get('cf-connecting-ip') || (new URL(env.SITE_URL).hostname==='localhost'?'local-preview':'');
     if(!ip)return Response.json({error:'The AI service could not verify this connection. Please try again later.'},{status:503,headers:noStore});
     await reserveResumeRequest(ip,key);
-    const selectedJob={title:job.title,company:job.company,location:job.location,experience:job.experience,education:job.education,requirements:job.requirements,description:job.details.slice(0,4500)};
+    const selectedJob=resumeJobContext(job),target=await resumeTarget(job);
+    const candidateResume=redactContact(parsed.data.resumeText,blankContact());
     const result=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(45000),
-      body:JSON.stringify({model:env.GROQ_RESUME_MODEL || 'openai/gpt-oss-20b',reasoning_effort:'low',max_completion_tokens:3500,response_format:{type:'json_schema',json_schema:{name:'tailored_resume',strict:true,schema:draftJsonSchema}},messages:[{role:'system',content:resumeSystemPrompt},{role:'user',content:JSON.stringify({candidateResume:parsed.data.resumeText,selectedJob})}]}),
+      body:JSON.stringify({model:env.GROQ_RESUME_MODEL || 'openai/gpt-oss-20b',reasoning_effort:'low',temperature:0.1,max_completion_tokens:5000,response_format:{type:'json_schema',json_schema:{name:'tailored_resume',strict:true,schema:draftJsonSchema}},messages:[{role:'system',content:resumeSystemPrompt},{role:'user',content:JSON.stringify({candidateResume,selectedJob})}]}),
     });
     if(!result.ok){
       if(result.status===429)return Response.json({error:'Groq’s free quota is temporarily busy. Wait a minute before trying again.'},{status:429,headers:{...noStore,'Retry-After':'60'}});
@@ -38,8 +40,8 @@ export async function POST(req:Request){
     const choice=response.choices?.[0];
     if(choice?.finish_reason!=='stop')return Response.json({error:'The AI draft was incomplete. Try a shorter resume or edit it manually.'},{status:502,headers:noStore});
     let draft;
-    try{draft=resumeDraft.parse(JSON.parse(choice.message.content));validateEvidence(draft,parsed.data.resumeText);}catch{return Response.json({error:'The AI draft did not pass the source-evidence checks. Try again later or edit your resume manually.'},{status:502,headers:noStore});}
-    return Response.json({draft},{headers:noStore});
+    try{draft=resumeDraft.parse(JSON.parse(choice.message.content));validateEvidence(draft,candidateResume,selectedJob.company);}catch{return Response.json({error:'The AI draft did not pass the source-evidence checks. Try again later or edit your resume manually.'},{status:502,headers:noStore});}
+    return Response.json({draft,target},{headers:noStore});
   }catch(error){
     if(error instanceof ResumeLimitError)return Response.json({error:error.message},{status:429,headers:{...noStore,'Retry-After':String(error.retryAfter)}});
     return Response.json({error:'Resume tailoring is temporarily unavailable. Please try again later. Your text has not been saved to our database.'},{status:503,headers:noStore});
