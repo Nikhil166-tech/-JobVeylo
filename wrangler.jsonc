@@ -18,6 +18,7 @@
       "!/style.css",
       "!/app.js",
       "!/fonts/*",
+      "!/reels/*",
       "!/pdf.worker.min.mjs",
       "!/pdfjs-LICENSE"
     ]
