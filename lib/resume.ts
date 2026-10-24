@@ -14,8 +14,8 @@ export const resumeDraft=z.object({
   changes:z.array(z.string().trim().min(1).max(250)).max(8),
 });
 export type ResumeDraft=z.infer<typeof resumeDraft>;
-export type Contact={name:string;email:string;phone:string;location:string;links:string};
-export const blankContact=():Contact=>({name:'',email:'',phone:'',location:'',links:''});
+export type Contact={name:string;headline?:string;email:string;phone:string;location:string;links:string};
+export const blankContact=():Contact=>({name:'',headline:'',email:'',phone:'',location:'',links:''});
 export const normalizeEvidence=(text:string)=>text.normalize('NFKC').toLowerCase().replace(/[\u2018\u2019]/g,"'").replace(/[\u2013\u2014]/g,'-').replace(/\s+/g,' ').trim();
 export function validateEvidence(draft:ResumeDraft,source:string) {
   const normalized=normalizeEvidence(source);

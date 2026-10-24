@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {unzipSync,strFromU8} from 'fflate';
-import {manualResumeDraft,resumeSections,resumeParagraphs,contactLines} from '../lib/resume-template.ts';
+import {manualResumeDraft,resumeSections,resumeParagraphs,contactLines,parseResumeSkills} from '../lib/resume-template.ts';
 import {buildResumeFile} from '../lib/resume-export.ts';
 
 const contact={name:'Zoë Morgan',email:'zoe@example.org',phone:'+1 202 555 0147',location:'Bengaluru, India',links:'https://example.org/portfolio'};
@@ -17,19 +17,26 @@ test('manual import keeps recognised sections and original facts without invente
 
 test('template keeps paragraph order, handles bullet markers and omits empty sections',()=>{
  assert.deepEqual(resumeParagraphs('Role | Company\n2024 - 2026\n- Built APIs.\n• Added tests.\n\nOther role'),[
-  {text:'Role | Company',bullet:false,entry:true},{text:'2024 - 2026',bullet:false,entry:false},{text:'Built APIs.',bullet:true,entry:false},{text:'Added tests.',bullet:true,entry:false},{text:'Other role',bullet:false,entry:true},
+  {text:'Role | Company',bullet:false,entry:true,right:'2024 - 2026'},{text:'Built APIs.',bullet:true,entry:false},{text:'Added tests.',bullet:true,entry:false},{text:'Other role',bullet:false,entry:true},
  ]);
  const draft=manualResumeDraft(source);draft.sections.push({title:'Education',content:'Additional training',sourceQuotes:[]});
  assert.equal(resumeSections(draft).filter(s=>s.title==='Education').length,1);
- assert.deepEqual(contactLines(contact),['zoe@example.org | +1 202 555 0147 | Bengaluru, India','https://example.org/portfolio']);
+ assert.deepEqual(contactLines(contact),['Bengaluru, India','zoe@example.org | +1 202 555 0147','https://example.org/portfolio']);
 });
 
 test('Word export uses body text, standard headings and real bullets without tables or images',async()=>{
  const draft=manualResumeDraft(source);draft.missingRequirements=['DO NOT EXPORT THIS GAP'];draft.changes=['DO NOT EXPORT THIS NOTE'];
  const blob=await buildResumeFile('docx',contact,draft,'letter');const zip=unzipSync(new Uint8Array(await blob.arrayBuffer()));
  const xml=strFromU8(zip['word/document.xml']);
- assert.ok(xml.includes('Zoë Morgan'));assert.ok(xml.includes('zoe@example.org'));assert.ok(xml.includes('PROFESSIONAL SUMMARY'));assert.ok(xml.includes('EDUCATION'));
- assert.ok(xml.includes('<w:numPr>'));assert.ok(xml.includes('w:keepNext'));assert.ok(xml.includes('w:w="12240"'));assert.ok(xml.includes('w:h="15840"'));
+ assert.ok(xml.includes('ZOË MORGAN'));assert.ok(xml.includes('zoe@example.org'));assert.ok(xml.includes('PROFESSIONAL SUMMARY'));assert.ok(xml.includes('EDUCATION'));
+ assert.ok(xml.includes('<w:numPr>'));assert.ok(xml.includes('Times New Roman'));assert.ok(xml.includes('w:val="center"'));assert.ok(xml.includes('<w:pBdr>'));assert.ok(xml.includes('WORK EXPERIENCE'));assert.ok(xml.includes('TECHNICAL SKILLS'));assert.ok(xml.includes('w:keepNext'));assert.ok(xml.includes('w:w="12240"'));assert.ok(xml.includes('w:h="15840"'));
  assert.ok(!/<w:tbl[ >]|<w:drawing[ >]|<w:pict[ >]/.test(xml));assert.ok(!xml.includes('DO NOT EXPORT'));assert.ok(!Object.keys(zip).some(k=>/^word\/(header|footer)\d/.test(k)));
  const a4=unzipSync(new Uint8Array(await (await buildResumeFile('docx',contact,draft,'a4')).arrayBuffer()));assert.ok(strFromU8(a4['word/document.xml']).includes('w:w="11906"'));
+});
+
+test('reference layout keeps categories intact and places technical skills after education',()=>{
+ const draft=manualResumeDraft('Technical Skills\nProgramming: Python, JavaScript\nBackend: FastAPI, PostgreSQL\nEducation\nExample Institute\n2020 - 2024\nBTech in Computer Science\nWork Experience\nEngineer | Example Company\n2024 - Present\n- Built tested APIs.');
+ assert.deepEqual(parseResumeSkills('Programming: Python, JavaScript\nBackend: FastAPI, PostgreSQL'),['Programming: Python, JavaScript','Backend: FastAPI, PostgreSQL']);
+ assert.deepEqual(resumeSections(draft).map(s=>s.title),['Work Experience','Education','Technical Skills']);
+ assert.equal(resumeSections(draft)[1].paragraphs[0].right,'2020 - 2024');
 });
