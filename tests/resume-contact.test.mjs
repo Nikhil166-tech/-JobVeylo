@@ -34,6 +34,12 @@ test('does not invent names, turn years into phones or treat technology names as
  assert.equal(result.contact.name,'');assert.equal(result.contact.phone,'');assert.equal(result.links.length,0);assert.ok(result.warnings.length>0);
 });
 
+test('does not mistake degree abbreviations for websites while keeping explicit links',()=>{
+ const result=extractResumeContact('Name: Alex Morgan\nEducation\nB.Tech, Computer Science\nM.Tech\nB.Com\nM.Com\nProjects\nhttps://example.tech/project\nhttps://b.tech/');
+ assert.deepEqual(result.links,['https://example.tech/project','https://b.tech/']);
+ assert.ok(result.bodyText.includes('B.Tech, Computer Science'));
+});
+
 test('redacts personal contacts and bare social URLs while preserving dates and metrics',()=>{
  const result=extractResumeContact(source);
  const cleaned=redactResumeContact(source,result.contact);

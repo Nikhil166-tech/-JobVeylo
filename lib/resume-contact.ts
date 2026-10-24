@@ -39,7 +39,7 @@ export function extractResumeContact(text:string,embeddedLinks:string[]=[]){
  for(const line of header){const found=phone(line);if(found){contact.phone=found;break}}
  if(!contact.phone){const labelled=lines.find(line=>/\b(?:phone|mobile|tel|contact)\s*:/i.test(line));if(labelled)contact.phone=phone(labelled)}
  const urls=text.match(/https?:\/\/[^\s<>"|]+|(?:www\.)?(?:[\p{L}\d-]+\.)+(?:com|org|net|io|dev|app|ai|me|co|in|tech|site|xyz|edu)(?:\/[^\s<>"|]*)?/giu)||[];
- for(const value of urls){if(text.includes('@'+value)||/^(?:asp\.net|vb\.net)$/i.test(value))continue;addLink(value)}
+ for(const value of urls){if(text.includes('@'+value)||/^(?:asp\.net|vb\.net|[bm]\.(?:tech|com))$/i.test(value))continue;addLink(value)}
  const labelledName=header.find(line=>/^(?:full\s+name|name)\s*:/i.test(line));
  const hasHeaderSignals=header.some(line=>!!line.match(emailPattern)||!!phone(line)||roleWords.test(line)||/\b(?:linkedin|github)\.com\//i.test(line));
  contact.name=nameCandidate(labelledName||'')||(hasHeaderSignals?header.slice(0,5).map(nameCandidate).find(Boolean):'')||'';
