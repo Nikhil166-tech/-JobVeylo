@@ -2,12 +2,31 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {unzipSync,strFromU8} from 'fflate';
-import {manualResumeDraft,resumeSections,resumeParagraphs,contactLines,resumeHeaderLinks,parseResumeSkills} from '../lib/resume-template.ts';
+import {manualResumeDraft,normalizeProjectDraft,projectParagraphs,resumeSections,resumeParagraphs,contactLines,resumeHeaderLinks,parseResumeSkills} from '../lib/resume-template.ts';
 import {buildResumeFile} from '../lib/resume-export.ts';
 
 const fonts={regular:new Uint8Array(readFileSync('public/fonts/LibertinusSerif-Regular.ttf')),bold:new Uint8Array(readFileSync('public/fonts/LibertinusSerif-Bold.ttf'))};
 const contact={name:'Zoë Morgan',email:'zoe@example.org',phone:'+1 202 555 0147',location:'Bengaluru, India',links:'https://example.org/portfolio'};
 const source='Professional Summary\nBuilt Python services.\nSkills\nPython, SQL\nWork Experience\nEngineer | Example Company\n2024 - 2026\n- Built APIs.\n\nEducation\nBTech | Example Institute | 2020 - 2024\nProjects\nPortfolio\n• Built an application tracker.';
+
+test('keeps the fourth bullet, caps each project independently and exports exactly the preview bullets',async()=>{
+ const projects='Search Assistant | Python\n'+Array.from({length:6},(_,i)=>'- Search achievement '+(i+1)+'.').join('\n')+'\n\nTracker\n'+Array.from({length:5},(_,i)=>'- Tracker achievement '+(i+1)+'.').join('\n');
+ const draft=manualResumeDraft('Projects\n'+projects+'\nExperience\nEngineer | Example\n'+Array.from({length:5},(_,i)=>'- Work achievement '+(i+1)+'.').join('\n'));
+ const normalized=normalizeProjectDraft(draft),preview=resumeSections(normalized),projectRows=preview.find(s=>s.title==='Projects').paragraphs;
+ assert.deepEqual(projectRows.filter(p=>p.bullet).map(p=>p.text),[...Array.from({length:4},(_,i)=>'Search achievement '+(i+1)+'.'),...Array.from({length:4},(_,i)=>'Tracker achievement '+(i+1)+'.')]);
+ assert.ok(draft.sections[0].content.includes('Search achievement 6.'));assert.ok(!normalized.sections[0].content.includes('achievement 5.'));
+ assert.equal(preview.find(s=>s.title==='Work Experience').paragraphs.filter(p=>p.bullet).length,5);
+ const zip=unzipSync(new Uint8Array(await (await buildResumeFile('docx',contact,normalized,'a4',fonts)).arrayBuffer()));
+ const xml=strFromU8(zip['word/document.xml']);
+ const exportedBullets=Array.from(xml.matchAll(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/g),m=>m[0]).filter(p=>p.includes('<w:numPr>')).map(p=>Array.from(p.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g),m=>m[1]).join(''));
+ assert.deepEqual(exportedBullets,preview.flatMap(s=>s.paragraphs.filter(p=>p.bullet).map(p=>p.text)));
+ assert.deepEqual(normalizeProjectDraft(normalized),normalized);
+});
+
+test('does not pad short projects and keeps wrapped fourth bullets intact',()=>{
+ const rows=projectParagraphs('Project | Python\n- First point.\n- Second point.\n- Third point.\n- Fourth point starts here and\ncontinues on the next line.\n- Fifth point.\n\nShort Project\n- Only one supported point.');
+ assert.equal(rows.filter(p=>p.bullet).length,5);assert.ok(rows.some(p=>p.text==='Fourth point starts here and continues on the next line.'));assert.ok(!rows.some(p=>p.text==='Fifth point.'));
+});
 
 test('manual import keeps recognised sections and original facts without invented text',()=>{
  const draft=manualResumeDraft(source);

@@ -1,9 +1,10 @@
 import type {Contact,ResumeDraft} from './resume.ts';
-import {contactLines,resumeHeaderLinks,resumeSections,resumeLayout,paperSizes,type PaperSize} from './resume-template.ts';
+import {contactLines,resumeHeaderLinks,resumeSections,normalizeProjectDraft,resumeLayout,paperSizes,type PaperSize} from './resume-template.ts';
 
 type Fonts={regular:Uint8Array;bold:Uint8Array};
 export async function buildResumeFile(format:'pdf'|'docx',contact:Contact,draft:ResumeDraft,paper:PaperSize='a4',fonts?:Fonts):Promise<Blob>{
- const sections=resumeSections(draft,contact),contacts=contactLines(contact),profiles=resumeHeaderLinks(contact,draft),size=paperSizes[paper],layout=resumeLayout;
+ const finalDraft=normalizeProjectDraft(draft);
+ const sections=resumeSections(finalDraft,contact),contacts=contactLines(contact),profiles=resumeHeaderLinks(contact,finalDraft),size=paperSizes[paper],layout=resumeLayout;
  if(!fonts){
   const responses=await Promise.all([fetch('/fonts/LibertinusSerif-Regular.ttf'),fetch('/fonts/LibertinusSerif-Bold.ttf')]);
   if(responses.some(r=>!r.ok))throw Error('The resume fonts could not load. Please try the download again.');
@@ -20,7 +21,7 @@ export async function buildResumeFile(format:'pdf'|'docx',contact:Contact,draft:
    ...(profiles.length?[new Paragraph({alignment:AlignmentType.CENTER,keepNext:true,spacing:{after:45},children:linkRuns(profiles)})]:[]),
    ...sections.flatMap(section=>[
     new Paragraph({heading:HeadingLevel.HEADING_1,keepNext:true,keepLines:true,border:{bottom:{style:BorderStyle.SINGLE,size:3,color:'777777',space:3}},spacing:{before:170,after:85},children:[new TextRun({text:section.title.toUpperCase(),font:'Libertinus Serif',bold:true,size:18,color:'111111'})]}),
-    ...section.paragraphs.map((p,i)=>new Paragraph({...(p.bullet?{numbering:{reference:'resume-dashes',level:0},indent:{left:240,hanging:180}}:{}),keepNext:!p.bullet&&!!section.paragraphs[i+1]&&!section.paragraphs[i+1].entry,keepLines:true,widowControl:true,tabStops:p.right||p.links?[{type:TabStopType.RIGHT,position:twips(size.width-2*layout.margin)}]:[],spacing:{before:p.entry&&i?65:0,after:45},children:[new TextRun({text:p.text,bold:p.entry,font:'Libertinus Serif',size:18,color:'111111'}),...(p.links?[new TextRun({text:p.text.length+p.links.map(l=>l.label).join(' | ').length>105?'\n':'\t'}),...linkRuns(p.links)]:p.right?[new TextRun({text:'\t'+p.right,bold:false,font:'Libertinus Serif',size:18})]:[])]})),
+    ...section.paragraphs.map((p,i)=>new Paragraph({...(p.bullet?{numbering:{reference:'resume-dashes',level:0},indent:{left:240,hanging:180}}:{}),keepNext:(section.title==='Projects'||!p.bullet)&&!!section.paragraphs[i+1]&&!section.paragraphs[i+1].entry,keepLines:true,widowControl:true,tabStops:p.right||p.links?[{type:TabStopType.RIGHT,position:twips(size.width-2*layout.margin)}]:[],spacing:{before:p.entry&&i?65:0,after:45},children:[new TextRun({text:p.text,bold:p.entry,font:'Libertinus Serif',size:18,color:'111111'}),...(p.links?[new TextRun({text:p.text.length+p.links.map(l=>l.label).join(' | ').length>105?'\n':'\t'}),...linkRuns(p.links)]:p.right?[new TextRun({text:'\t'+p.right,bold:false,font:'Libertinus Serif',size:18})]:[])]})),
    ]),
   ]}]});
   return Packer.toBlob(document);
@@ -57,6 +58,15 @@ export async function buildResumeFile(format:'pdf'|'docx',contact:Contact,draft:
  if(profiles.length)writeLinks(profiles,'center');
  y+=1;
  for(const section of sections){
+  const projectHeight=(index:number)=>{
+   if(section.title!=='Projects'||!section.paragraphs[index].entry)return 0;
+   let height=0;
+   for(let j=index;j<section.paragraphs.length&&(j===index||!section.paragraphs[j].entry);j++){
+    const row=section.paragraphs[j];height+=lines(row.text,layout.bodySize,row.entry,row.bullet?4.5:0).length*layout.lineHeight+.6;
+    if(row.links||row.right)height+=4.5;
+   }
+   return height<=bottom-layout.margin-11?height:0;
+  };
   const followingHeight=(index:number)=>{
    if(!section.paragraphs[index].entry)return 0;
    let height=0;
@@ -67,10 +77,11 @@ export async function buildResumeFile(format:'pdf'|'docx',contact:Contact,draft:
    return height;
   };
   const first=section.paragraphs[0],firstLines=lines(first.text,layout.bodySize,first.entry,first.bullet?4.5:0).length;
-  ensure(11+(firstLines<=12?firstLines:2)*layout.lineHeight+followingHeight(0)+(first.right?layout.lineHeight:0));
+  ensure(11+Math.max(projectHeight(0),(firstLines<=12?firstLines:2)*layout.lineHeight+followingHeight(0)+(first.right?layout.lineHeight:0)));
   y+=3;write(section.title.toUpperCase(),layout.sectionSize,true,false,5.7);pdf.setDrawColor(119,119,119);pdf.setLineWidth(.15);pdf.line(layout.margin,y,size.width-layout.margin,y);y+=2.3;
   for(let i=0;i<section.paragraphs.length;i++){
    const p=section.paragraphs[i];if(p.entry&&i)y+=1.5;
+   const projectBlock=projectHeight(i);if(projectBlock)ensure(projectBlock);
    if(p.links){
     pdf.setFont('Resume','normal');pdf.setFontSize(8.8);const linkWidth=pdf.getTextWidth(p.links.map(l=>l.label).join(' | '));pdf.setFont('Resume','bold');pdf.setFontSize(layout.bodySize);
     if(pdf.getTextWidth(p.text)+linkWidth+5<=width){ensure(layout.lineHeight+followingHeight(i));pdf.setFont('Resume','bold');pdf.setFontSize(layout.bodySize);pdf.setTextColor(17,17,17);pdf.text(p.text,layout.margin,y+layout.lineHeight*.76);writeLinks(p.links)}

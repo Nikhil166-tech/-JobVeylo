@@ -100,6 +100,8 @@ Experience:
 Projects:
 - Preserve original project names exactly so their demo and repository links remain attached to the correct project.
 - Prioritize projects relevant to the job.
+- Use at most 4 bullets per project, selecting and ordering the strongest supported points for selectedJob. Fewer than 4 is valid; never add filler or invent facts to reach 4.
+- If the uploaded project has more than 4 points, combine closely related supported facts when useful and omit weaker repetition. Put the most JD-relevant supported points first.
 - Highlight supported implementation details, technologies and outcomes.
 - Never assign one project's technology, result or metric to another project.
 

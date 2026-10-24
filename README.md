@@ -66,3 +66,5 @@ The ATS Serif template uses a single-column document body, a centered name and p
 ## Migration status
 
 The three published Netlify listings have been exported and restored in Cloudflare D1. Keep Netlify until public pages, owner sign-in, editing/import and AI tailoring are verified on Cloudflare. Existing community links still point to Netlify until changed or redirected.
+
+Project tailoring selects at most four supported, JD-relevant bullets per project. The final project policy is shared by preview and both exports; downloading captures the currently reviewed final draft. Short project blocks stay together across page breaks when they fit on a page. Manual imports keep the first four source bullets until AI tailoring or manual editing prioritises them.

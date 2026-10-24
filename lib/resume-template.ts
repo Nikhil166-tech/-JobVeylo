@@ -24,6 +24,20 @@ export function resumeParagraphs(content:string):ResumeParagraph[]{
  for(let i=1;i<paragraphs.length;i++)if(!paragraphs[i].bullet&&!paragraphs[i].entry&&paragraphs[i-1].bullet){paragraphs[i-1].text+=' '+paragraphs[i].text;paragraphs.splice(i--,1)}
  return paragraphs;
 }
+export const maxProjectBullets=4;
+export function projectParagraphs(content:string){
+ let bullets=0;
+ return resumeParagraphs(content).filter(p=>{if(!p.bullet){if(p.entry)bullets=0;return true}return ++bullets<=maxProjectBullets});
+}
+// Apply the same project policy before review, preview and either export format.
+export function normalizeProjectDraft(draft:ResumeDraft):ResumeDraft{
+ return {...draft,sections:draft.sections.map(section=>{
+  if(section.title!=='Projects')return section;
+  const original=resumeParagraphs(section.content),limited=projectParagraphs(section.content);
+  if(original.length===limited.length)return section;
+  return {...section,content:limited.map((p,i)=>(p.entry&&i?'\n':'')+(p.bullet?'- ':'')+p.text+(p.right?'\n'+p.right:'')).join('\n')};
+ })};
+}
 const entryKey=(text:string)=>text.split('|')[0].toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 const urlKey=(url:string)=>safeResumeLink(url).replace(/^https?:\/\/(?:www\.)?/,'').replace(/\/$/,'');
 export function resumeHeaderLinks(contact:Contact,draft?:ResumeDraft){
@@ -35,7 +49,7 @@ export function resumeSections(draft:ResumeDraft,contact?:Contact){
  if(draft.summary.text.trim())sections.push({title:'Professional Summary',paragraphs:[{text:draft.summary.text.trim(),bullet:false,entry:false}]});
  const skills=draft.skills.map(s=>s.trim()).filter(Boolean);
  for(const section of draft.sections){
-  const paragraphs=resumeParagraphs(section.content);if(!paragraphs.length)continue;
+  const paragraphs=section.title==='Projects'?projectParagraphs(section.content):resumeParagraphs(section.content);if(!paragraphs.length)continue;
   if(section.title==='Projects'&&contact)for(const p of paragraphs){
    if(p.bullet)continue;
    const links=contact.linkPlacements?.filter(link=>entryKey(link.entry)===entryKey(p.text)&&contact.links.split(/[|\n]/).some(url=>urlKey(url.trim())===urlKey(link.url))).map(link=>({url:safeResumeLink(link.url),label:link.label})).filter(link=>link.url);

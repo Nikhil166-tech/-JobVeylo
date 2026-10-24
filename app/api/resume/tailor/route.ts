@@ -3,6 +3,7 @@ import {resumeRequest,resumeDraft,validateEvidence,draftJsonSchema,resumeSystemP
 import {reserveResumeRequest,ResumeLimitError} from '../../../../lib/resume-limits';
 import {bindings,sameOrigin} from '../../../../lib/platform';
 import {resumeJobContext,resumeTarget} from '../../../../lib/resume-job';
+import {normalizeProjectDraft} from '../../../../lib/resume-template';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
@@ -41,7 +42,7 @@ export async function POST(req:Request){
     if(choice?.finish_reason!=='stop')return Response.json({error:'The AI draft was incomplete. Try a shorter resume or edit it manually.'},{status:502,headers:noStore});
     let draft;
     try{draft=resumeDraft.parse(JSON.parse(choice.message.content));validateEvidence(draft,candidateResume,selectedJob.company);}catch{return Response.json({error:'The AI draft did not pass the source-evidence checks. Try again later or edit your resume manually.'},{status:502,headers:noStore});}
-    return Response.json({draft,target},{headers:noStore});
+    return Response.json({draft:normalizeProjectDraft(draft),target},{headers:noStore});
   }catch(error){
     if(error instanceof ResumeLimitError)return Response.json({error:error.message},{status:429,headers:{...noStore,'Retry-After':String(error.retryAfter)}});
     return Response.json({error:'Resume tailoring is temporarily unavailable. Please try again later. Your text has not been saved to our database.'},{status:503,headers:noStore});
