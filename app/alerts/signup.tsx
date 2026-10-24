@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+import {whatsappConsentMessage,type WhatsAppCategory} from '../../lib/whatsapp-optin';
+export default function WhatsAppSignup({number}:{number:string}){
+ const [category,setCategory]=useState<WhatsAppCategory>('ALL'),[consent,setConsent]=useState(false);
+ return <section className="contact-card"><h2>Choose your job alerts</h2><label className="field">Topics<select value={category} onChange={e=>setCategory(e.target.value as WhatsAppCategory)}><option value="ALL">All JobVeylo openings</option><option value="GOVERNMENT">Indian government openings</option><option value="PRIVATE">Private-sector openings</option></select></label><p>Up to one alert per day. Availability and eligibility vary by job. JobVeylo does not guarantee selection.</p><label className="check"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/>I agree to receive JobVeylo job alerts on WhatsApp. I can reply STOP at any time to unsubscribe.</label>{consent?<a className="primary" href={'https://wa.me/'+number+'?text='+encodeURIComponent(whatsappConsentMessage(category))} target="_blank" rel="noopener noreferrer">Confirm in WhatsApp ↗</a>:<button className="primary" disabled>Confirm in WhatsApp ↗</button>}<p>You subscribe only after sending the pre-filled consent message from your own WhatsApp account. Read our <a href="/privacy">privacy notice</a>.</p></section>;
+}

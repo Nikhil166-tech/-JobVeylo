@@ -1,0 +1,6 @@
+import {Header,Footer} from '../../components/site-shell';
+import {bindings} from '../../lib/platform';
+import WhatsAppSignup from './signup';
+export const dynamic='force-dynamic';
+export const metadata={title:'WhatsApp job alerts | JobVeylo',description:'Choose JobVeylo job alerts and confirm your subscription on WhatsApp.'};
+export default function Alerts(){const env=bindings(),ready=env.WHATSAPP_SIGNUPS_ENABLED==='true'&&/^\d{9,15}$/.test(env.WHATSAPP_BUSINESS_NUMBER||'')&&!!env.WHATSAPP_APP_SECRET&&!!env.WHATSAPP_VERIFY_TOKEN&&!!env.WHATSAPP_PHONE_NUMBER_ID;return <><Header/><main><div className="page-head"><div className="wrap"><a className="breadcrumb" href="/">Home /</a><h1>Job alerts, by your choice.</h1><p className="sub">Official WhatsApp subscriber alerts from JobVeylo.</p></div></div><article className="article">{ready?<WhatsAppSignup number={env.WHATSAPP_BUSINESS_NUMBER!}/>:<section className="contact-card"><h2>WhatsApp subscriptions are not open yet</h2><p>We are setting up the business account and alert service. No phone number or subscription information is collected on this page while setup is incomplete.</p><a className="primary" href="/#jobs">Browse current openings ↗</a></section>}</article></main><Footer/></>}

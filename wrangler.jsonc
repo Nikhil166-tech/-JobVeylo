@@ -25,6 +25,7 @@
   "account_id": "a354137d11d3cc1a66ae5d8e5d559050",
   "workers_dev": true,
   "keep_vars": true,
+  "services": [{"binding":"COLLECTOR","service":"jobveylo-collector"}],
   "observability": {
     "enabled": false
   },

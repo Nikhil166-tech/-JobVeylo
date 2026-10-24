@@ -68,3 +68,30 @@ The ATS Serif template uses a single-column document body, a centered name and p
 The three published Netlify listings have been exported and restored in Cloudflare D1. Keep Netlify until public pages, owner sign-in, editing/import and AI tailoring are verified on Cloudflare. Existing community links still point to Netlify until changed or redirected.
 
 Project tailoring selects at most four supported, JD-relevant bullets per project. The final project policy is shared by preview and both exports; downloading captures the currently reviewed final draft. Short project blocks stay together across page breaks when they fit on a page. Manual imports keep the first four source bullets until AI tailoring or manual editing prioritises them.
+
+## Scheduled job collection
+
+`jobveylo-collector` is a private Worker sharing the listings D1 database. Its UTC schedule checks due sources at :00 and :30, independently of local computers. The scheduled handler dispatches bounded per-source checks through a private self service binding. There are no public Worker or preview URLs. The owner dashboard calls it through the `COLLECTOR` service binding.
+
+The initial allowlist is AiPrise/Ashby, Safe Security/Lever, Cloudflare/Greenhouse, Employment News and UPSC recruitment notices. This is a starting set, not worldwide or all-government coverage. Blocked/changed sources surface errors and back off; CAPTCHA and access controls are not bypassed. Employment News records require an original employer notice URL before draft creation. UPSC advertisements may cover multiple vacancies and require manual splitting and PDF review.
+
+Collection has a four-minute lease, source-level pauses, duplicate suppression, a maximum of four new records per source/check and 40 pending/source. Successful feed checks mark disappeared openings; two misses block importing a stale candidate. The source check date is not a guarantee of employment availability. Collection never publishes or sends social posts. Imported drafts retain optimistic locking and the existing owner-review publishing gate. Dismissed/imported records are not recreated automatically. Logs contain public source status only; run history expires after 14 days.
+
+Deploy schema first, then the private collector, then rebuild and deploy the website:
+
+```sh
+npx wrangler d1 migrations apply jobveylo-db --remote --config wrangler.jsonc
+npx wrangler deploy --config wrangler.collector.jsonc
+npm run build
+npm run deploy
+```
+
+Owner controls and source outcomes are available under `/admin` → Collected openings. `Check due sources now` respects source cooldowns and backoff. The first run also detects already-published canonical source URLs, including tracking-parameter variants. Connect publishing providers separately; a chat plugin connection does not provision server-side API credentials.
+
+## Official WhatsApp setup (delivery not enabled)
+
+`/admin/whatsapp` contains the owner setup checklist and proposed job-alert template. `/api/whatsapp/webhook` verifies Meta's challenge and checks the raw-body HMAC signature before processing explicit subscription consent or STOP. Configure `WHATSAPP_APP_SECRET` and `WHATSAPP_VERIFY_TOKEN` as encrypted Worker secrets, plus `WHATSAPP_PHONE_NUMBER_ID` and the international digits-only `WHATSAPP_BUSINESS_NUMBER`. Start with Meta's test sender and your own verified recipient. Keep tokens out of Git, logs and chat.
+
+Apply migration `0003_whatsapp_optin.sql` before connecting the webhook. Public `/alerts` remains closed until all required settings and `WHATSAPP_SIGNUPS_ENABLED=true` are configured. It creates a consent message for the visitor to send themselves; clicking the link alone does not subscribe them. Consent covers up to one alert per day, with category selection and STOP. Event-time ordering prevents a delayed START from undoing a newer STOP. Dedupe identifiers expire after 30 days; stopped subscriber records are retained to suppress further delivery.
+
+This release does not send WhatsApp messages or schedule Instagram posts. Live delivery still requires a production business number, approved Meta template, server-side publishing credentials, a delivery queue with duplicate protection, and a cost review. The official Business Platform subscriber flow does not publish to the existing public WhatsApp Channel. A Metricool chat connection alone cannot run a hosted publishing worker continuously.
