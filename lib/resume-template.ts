@@ -1,9 +1,10 @@
 import type {Contact,ResumeDraft} from './resume.ts';
+import {safeResumeLink} from './resume-contact.ts';
 
 export type PaperSize='a4'|'letter';
-export type ResumeParagraph={text:string;bullet:boolean;entry:boolean;right?:string};
+export type ResumeParagraph={text:string;bullet:boolean;entry:boolean;right?:string;links?:{url:string;label:string}[]};
 export const paperSizes={a4:{width:210,height:297,label:'A4'},letter:{width:215.9,height:279.4,label:'US Letter'}} as const;
-export const resumeLayout={margin:12.7,topMargin:9,bodySize:10.5,lineHeight:4.8,sectionSize:11,nameSize:18};
+export const resumeLayout={margin:12.7,topMargin:9,bodySize:9,lineHeight:4.2,sectionSize:11.2,nameSize:18};
 export function resumeParagraphs(content:string):ResumeParagraph[]{
  let startsEntry=true;
  const paragraphs:ResumeParagraph[]=content.replace(/\r\n?/g,'\n').split('\n').flatMap(line=>{
@@ -15,16 +16,31 @@ export function resumeParagraphs(content:string):ResumeParagraph[]{
  const dateRange=/(?:\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\b\d{4}\s*[-–—]\s*(?:Present|Current|(?:[A-Za-z]+\s+)?\d{4})$/i;
  for(let i=0;i<paragraphs.length;i++){
   const p=paragraphs[i],next=paragraphs[i+1];
+  const inline=p.text.match(dateRange);
+  if(!p.bullet&&inline&&inline.index){const before=p.text.slice(0,inline.index).trim();const parts=before.split(/\s{2,}/);p.text=parts[0].replace(/[\s|]+$/,'');p.right=[...parts.slice(1).map(part=>part.replace(/[\s|]+$/,'')),inline[0]].filter(Boolean).join(' | ');p.entry=true}
+  if(!p.bullet&&/\s\|\s/.test(p.text)&&!/^\s*(?:B\.?Tech|Diploma|Bachelor|Master)/i.test(p.text))p.entry=true;
   if(p.entry&&next&&!next.entry&&!next.bullet&&dateRange.test(next.text)&&next.text.length<100){p.right=next.text;paragraphs.splice(i+1,1)}
  }
+ for(let i=1;i<paragraphs.length;i++)if(!paragraphs[i].bullet&&!paragraphs[i].entry&&paragraphs[i-1].bullet){paragraphs[i-1].text+=' '+paragraphs[i].text;paragraphs.splice(i--,1)}
  return paragraphs;
 }
-export function resumeSections(draft:ResumeDraft){
+const entryKey=(text:string)=>text.split('|')[0].toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+const urlKey=(url:string)=>safeResumeLink(url).replace(/^https?:\/\/(?:www\.)?/,'').replace(/\/$/,'');
+export function resumeHeaderLinks(contact:Contact,draft?:ResumeDraft){
+ const projects=draft?.sections.filter(s=>s.title==='Projects').flatMap(s=>resumeParagraphs(s.content))||[];
+ return contact.links.split(/[|\n]/).map(url=>safeResumeLink(url)).filter(Boolean).filter(url=>!contact.linkPlacements?.some(p=>urlKey(p.url)===urlKey(url)&&projects.some(row=>!row.bullet&&entryKey(row.text)===entryKey(p.entry)))).map(url=>({url,label:url.replace(/^https?:\/\/(?:www\.)?/,'').replace(/\/$/,'')}));
+}
+export function resumeSections(draft:ResumeDraft,contact?:Contact){
  const sections:{title:string;paragraphs:ResumeParagraph[]}[]=[];
  if(draft.summary.text.trim())sections.push({title:'Professional Summary',paragraphs:[{text:draft.summary.text.trim(),bullet:false,entry:false}]});
  const skills=draft.skills.map(s=>s.trim()).filter(Boolean);
  for(const section of draft.sections){
   const paragraphs=resumeParagraphs(section.content);if(!paragraphs.length)continue;
+  if(section.title==='Projects'&&contact)for(const p of paragraphs){
+   if(p.bullet)continue;
+   const links=contact.linkPlacements?.filter(link=>entryKey(link.entry)===entryKey(p.text)&&contact.links.split(/[|\n]/).some(url=>urlKey(url.trim())===urlKey(link.url))).map(link=>({url:safeResumeLink(link.url),label:link.label})).filter(link=>link.url);
+   if(links?.length){p.links=links;p.entry=true;p.text=p.text.replace(/\s*\|?\s*\b(?:Live Demo|Git Repo|Source Code|Repository)\b.*$/i,'').trim()}
+  }
   const existing=sections.find(s=>s.title===section.title);
   if(existing)existing.paragraphs.push(...paragraphs);else sections.push({title:section.title,paragraphs});
  }
@@ -37,12 +53,11 @@ export function resumeSections(draft:ResumeDraft){
 export const contactLines=(contact:Contact)=>[
  contact.location.trim(),
  [contact.email.trim(),contact.phone.trim()].filter(Boolean).join(' | '),
- contact.links.trim(),
 ].filter(Boolean);
 
 export function parseResumeSkills(text:string){
  const labelled=text.split(/[\n;]/).some(line=>/^\s*[\w /&+.-]+:/.test(line));
- return text.split(labelled?/[\n;]/:/[,;\n|]/).map(s=>s.trim().replace(/^[-*•]\s*/,'' )).filter(Boolean);
+ return text.split(labelled?/\n|;\s*(?=[\w /&+.-]+:)/:/[,;\n|]/).map(s=>s.trim().replace(/^[-*•]\s*/,'' )).filter(Boolean);
 }
 
 const headings:Record<string,string>={summary:'Summary','professional summary':'Summary',profile:'Summary',objective:'Summary',skills:'Skills','technical skills':'Skills',experience:'Experience','work experience':'Experience','professional experience':'Experience','employment history':'Experience',projects:'Projects','personal projects':'Projects','academic projects':'Projects',education:'Education','academic qualifications':'Education',certifications:'Certifications',achievements:'Achievements'};
@@ -55,7 +70,7 @@ export function manualResumeDraft(source:string):ResumeDraft{
  }
  if(!labelled)return {summary:{text:'',sourceQuotes:[]},skills:[],sections:[{title:'Experience',content:source.trim(),sourceQuotes:[]}],missingRequirements:[],changes:[]};
  const text=(title:string)=>groups.find(g=>g.title===title)?.lines.join('\n').trim()||'';
- return {summary:{text:text('Summary'),sourceQuotes:[]},skills:parseResumeSkills(text('Skills')),sections:groups.filter(g=>!['Summary','Skills'].includes(g.title)&&g.lines.join('').trim()).map(g=>({title:g.title as ResumeDraft['sections'][number]['title'],content:g.lines.join('\n').trim(),sourceQuotes:[]})),missingRequirements:[],changes:[]};
+ return {summary:{text:text('Summary').replace(/\s*\n\s*/g,' '),sourceQuotes:[]},skills:parseResumeSkills(text('Skills')),sections:groups.filter(g=>!['Summary','Skills'].includes(g.title)&&g.lines.join('').trim()).map(g=>({title:g.title as ResumeDraft['sections'][number]['title'],content:g.lines.join('\n').trim(),sourceQuotes:[]})),missingRequirements:[],changes:[]};
 }
 
 export function resumeChecks(contact:Contact,draft:ResumeDraft){

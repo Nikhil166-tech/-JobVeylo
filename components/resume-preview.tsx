@@ -1,5 +1,5 @@
 import type {Contact,ResumeDraft} from '../lib/resume';
-import {contactLines,resumeSections,type PaperSize} from '../lib/resume-template';
+import {contactLines,resumeHeaderLinks,resumeSections,type PaperSize} from '../lib/resume-template';
 
 const sampleContact:Contact={name:'Alex Morgan',headline:'Software Engineer',email:'alex.morgan@example.com',phone:'+1 202 555 0147',location:'Bengaluru, India',links:'github.com/alexmorgan | linkedin.com/in/alexmorgan'};
 const sampleDraft:ResumeDraft={summary:{text:'Software engineer with experience building Python services, REST APIs and reliable data workflows. Collaborates with product teams to deliver tested, maintainable applications.',sourceQuotes:[]},skills:['Programming: Python, SQL','Backend: REST APIs, PostgreSQL','Tools: Git, Docker, Automated testing'],sections:[
@@ -13,6 +13,7 @@ export default function ResumePreview({contact,draft,paper}:{contact:Contact;dra
   <div className="resume-paper-name">{(person.name.trim()||'Your full name').toUpperCase()}</div>
   {person.headline?.trim()&&<p className="resume-paper-headline">{person.headline.trim()}</p>}
   {contactLines(person).map((line,i)=><p className="resume-paper-contact" key={i}>{line}</p>)}
-  {resumeSections(document).map(section=><section key={section.title}><h3>{section.title}</h3>{section.paragraphs.map((p,i)=>p.bullet?<ul className="resume-paper-bullets" key={i}><li>{p.text}</li></ul>:<p key={i} className={p.entry?'resume-paper-entry':''}>{p.right?<><span>{p.text}</span><span className="resume-paper-date">{p.right}</span></>:p.text}</p>)}</section>)}
+  <div className="resume-paper-contact resume-paper-profile-links">{resumeHeaderLinks(person,document).map(link=><a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>)}</div>
+  {resumeSections(document,person).map(section=><section key={section.title}><h3>{section.title}</h3>{section.paragraphs.map((p,i)=>p.bullet?<ul className="resume-paper-bullets" key={i}><li>{p.text}</li></ul>:<p key={i} className={p.entry?'resume-paper-entry':''}>{p.right||p.links?<><span>{p.text}</span>{p.links?<span className="resume-paper-project-links">{p.links.map(link=><a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>)}</span>:<span className="resume-paper-date">{p.right}</span>}</>:p.text}</p>)}</section>)}
  </article><p className="resume-hint">Single column · Text-based PDF and Word · No photos or layout tables. Page breaks can vary between formats.</p></div>;
 }

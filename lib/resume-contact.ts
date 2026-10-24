@@ -1,4 +1,4 @@
-import type {Contact} from './resume.ts';
+import type {Contact,ResumeLinkPlacement} from './resume.ts';
 
 const section=/^(?:professional summary|summary|profile|objective|work experience|professional experience|experience|employment history|education|academic qualifications|technical skills|skills|projects|personal projects|academic projects|certifications|achievements)\s*:?(?:\s*)$/i;
 const emailPattern=/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9.-]*[A-Z0-9])?\.[A-Z]{2,}/ig;
@@ -23,7 +23,7 @@ function nameCandidate(value:string){
  return cleaned.length<=90&&words.length>=2&&words.length<=7&&/^[\p{L}\p{M}.'’ -]+$/u.test(cleaned)&&!notName.test(cleaned)&&!roleWords.test(cleaned)&&!(/\b(?:built|developed|implemented|worked|proficient|seeking|responsible|experienced)\b/i.test(cleaned))&&(labelled||words.every(word=>/^(?:\p{Lu}[\p{L}\p{M}.'’-]*|de|del|da|dos|van|von|al|bin)$/u.test(word)))?cleaned:'';
 }
 
-export function extractResumeContact(text:string,embeddedLinks:string[]=[]){
+export function extractResumeContact(text:string,embeddedLinks:string[]=[],placements:ResumeLinkPlacement[]=[]){
  const contact:Contact={name:'',headline:'',email:'',phone:'',location:'',links:''};
  const lines=text.replace(/\r\n?/g,'\n').split('\n'),firstSection=lines.findIndex(line=>section.test(line.trim()));
  const headerEnd=firstSection<0?Math.min(lines.length,12):Math.min(firstSection,20);
@@ -50,6 +50,8 @@ export function extractResumeContact(text:string,embeddedLinks:string[]=[]){
  const bounded=links.slice(0,24);let combined='';
  for(const url of bounded){if((combined?combined+' | ':'').length+url.length>8192)break;combined+=(combined?' | ':'')+url}
  contact.links=combined;
+ const validPlacements=placements.flatMap(p=>{const url=safeResumeLink(p.url);return url&&keys.has(linkKey(url))&&p.entry.trim()&&p.label.trim()?[{...p,url,entry:p.entry.trim().slice(0,300),label:p.label.trim().slice(0,60)}]:[]});
+ if(validPlacements.length)contact.linkPlacements=validPlacements;
  if(!contact.name)warnings.push('Your name could not be identified confidently. Check the contact fields.');
  if(!contact.email&&!contact.phone)warnings.push('No email or phone number was found. Add a contact method before downloading.');
  if(links.length>24||combined.split(' | ').length<bounded.length)warnings.push('Some links exceed the contact-field limit. Review your important profile and project links.');
