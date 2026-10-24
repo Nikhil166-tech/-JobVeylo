@@ -29,6 +29,8 @@ Owner sign-in accepts only GitHub ID `135293869` (`Nikhil166-tech`). OAuth uses 
 
 Never commit secrets, Wrangler credentials, `.dev.vars`, database exports or build output.
 
+`keep_vars: true` preserves variables added through the Cloudflare dashboard during deployments. API keys should still use the **Secret** type, rather than plaintext variables.
+
 ## Check and deploy
 
 ```sh
