@@ -5,7 +5,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {careerPriority,sourcePriorityHint} from '../lib/job-priority.ts';
 import {makeCollectedJob,collectionSources} from '../lib/collection-sources.ts';
 import {runAutomaticPublishing,locationConflict,expiredDeadline} from '../lib/automatic-publishing.ts';
-import {claimReel,automationAuthorized,runInstagramPublishing} from '../lib/instagram-publishing.ts';
+import {claimReel,automationAuthorized,runInstagramPublishing,checkInstagramConnection} from '../lib/instagram-publishing.ts';
 function database(){
  const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
  for(const source of collectionSources)sqlite.prepare('INSERT INTO collection_sources(id) VALUES(?)').run(source.id);
@@ -95,4 +95,12 @@ test('interrupted Instagram requests are held without blocking other jobs',async
  const env={DB:db,SITE_URL:'https://example.com',REEL_MEDIA:{},INSTAGRAM_ACCOUNT_ID:'123',INSTAGRAM_ACCESS_TOKEN:'test-only'};
  await runInstagramPublishing(env,{fetcher:async()=>{throw Error('must not retry')}});
  assert.equal(sqlite.prepare('SELECT status FROM social_jobs').get().status,'held');sqlite.close();
+});
+
+test('Instagram connection diagnostics expose only safe codes and verify the intended account',async()=>{
+ const env={REEL_MEDIA:{},INSTAGRAM_ACCOUNT_ID:'123',INSTAGRAM_ACCESS_TOKEN:'private-test-token'};
+ const ok=await checkInstagramConnection(env,async()=>Response.json({id:'123',username:'jobveylo'}));assert.equal(ok.state,'connected');
+ const rejected=await checkInstagramConnection(env,async()=>Response.json({error:{code:190,error_subcode:463,message:'private-test-token'}},{status:400}));assert.equal(rejected.code,190);assert.equal(rejected.subcode,463);assert.equal(JSON.stringify(rejected).includes('private-test-token'),false);
+ assert.equal((await checkInstagramConnection(env,async()=>Response.json({username:'another-account'}))).state,'wrong_account');
+ assert.equal((await checkInstagramConnection({},async()=>{throw Error('must not fetch')})).state,'connection_required');
 });

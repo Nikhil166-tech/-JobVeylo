@@ -1,7 +1,7 @@
 import {runCollection} from '../lib/collection';
 import {collectionSources} from '../lib/collection-sources';
 import {runAutomaticPublishing} from '../lib/automatic-publishing';
-import {runInstagramPublishing,type SocialEnv} from '../lib/instagram-publishing';
+import {runInstagramPublishing,checkInstagramConnection,type SocialEnv} from '../lib/instagram-publishing';
 type Env=SocialEnv&{SELF:Fetcher};
 async function dispatch(env:Env){
  const results=[];
@@ -25,6 +25,7 @@ export default {
   if(path==='/publish')return Response.json(await runAutomaticPublishing(env.DB));
   if(path==='/instagram')return Response.json(await runInstagramPublishing(env,{startNew:true}));
   if(path==='/instagram-poll')return Response.json(await runInstagramPublishing(env));
+  if(path==='/instagram-check')return Response.json(await checkInstagramConnection(env));
   const sourceId=path.replace(/^\/source\//,'');
   if(!collectionSources.some(source=>source.id===sourceId))return new Response('Not found',{status:404});
   return Response.json(await runCollection(env.DB,{sourceId}));

@@ -2,7 +2,7 @@ import {requireEditor} from '../../../lib/editor-auth';
 import {bindings} from '../../../lib/platform';
 import {instagramReady} from '../../../lib/instagram-publishing';
 import {Header,Footer} from '../../../components/site-shell';
-import RendererConnection from '../../../components/renderer-connection';
+import RendererConnection,{InstagramConnectionCheck} from '../../../components/renderer-connection';
 export const dynamic='force-dynamic';
 export const metadata={title:'Instagram automation | JobVeylo',robots:{index:false,follow:false}};
 export default async function InstagramSetup(){
@@ -14,6 +14,7 @@ export default async function InstagramSetup(){
   <h2>{instagramReady(env)?'Publishing credentials configured':'One-time connection required'}</h2>
   <p>Website publishing works independently. Direct Instagram delivery needs a professional @jobveylo account, its authorised publishing token and the hosted renderer. The Metricool chat connection does not supply those server credentials.</p>
   <ul>{configured.map(([name,ready])=><li key={String(name)}>{String(name)}: <b>{ready?'Configured':'Not configured'}</b></li>)}</ul>
+  <InstagramConnectionCheck/>
   <h2>Connect once</h2><ol><li>In the Meta app, configure Instagram API with Instagram Login for your own professional @jobveylo account. Grant the basic identity and content-publishing permissions requested by Meta.</li><li>Save the Instagram account ID and long-lived access token privately in both the website Worker and jobveylo-collector Worker, using INSTAGRAM_ACCOUNT_ID and encrypted INSTAGRAM_ACCESS_TOKEN. Never paste tokens in chat or commit them.</li><li>Bind the same private Cloudflare KV namespace as REEL_MEDIA to both Workers. Only generated public videos are served by the media endpoint; videos expire after seven days.</li><li>Create a renderer connection key below and save it as the GitHub Actions repository secret JOBVEYLO_AUTOMATION_KEY. It grants only reel-job claiming and video uploads, not owner-dashboard access.</li><li>Enable the hosted renderer workflow on the repository’s default branch. It renders one 20-second MP4 every 30 minutes and uploads it to JobVeylo. No local computer is needed. GitHub scheduling and Instagram processing can introduce delays.</li></ol>
   <h2>Hosted renderer connection</h2><RendererConnection/>
   <p>The key created here is stored only as a hash in the private namespace. You only need to save the actual key in GitHub. This replaces the manual Worker-secret step above when using this connection button.</p>

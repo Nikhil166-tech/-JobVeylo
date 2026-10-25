@@ -1,5 +1,10 @@
 'use client';
 import {useState} from 'react';
+export function InstagramConnectionCheck(){
+ const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ async function check(){setBusy(true);try{const response=await fetch('/api/admin/collection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'instagram-check'})});const data=await response.json() as {message?:string;error?:string;code?:number;subcode?:number};setMessage((data.message||data.error||'Connection check failed')+(data.code?' API code '+data.code:'')+(data.subcode?' / '+data.subcode:''))}catch{setMessage('Connection check could not complete.')}finally{setBusy(false)}}
+ return <div><button className="secondary" disabled={busy} onClick={check}>{busy?'Checking…':'Check Instagram connection'}</button><p role="status">{message}</p></div>;
+}
 export default function RendererConnection(){
  const [key,setKey]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  async function generate(){if(!confirm('Create a renderer key? Any previous renderer key will stop working. Save this key only in this repository’s GitHub Actions secret JOBVEYLO_AUTOMATION_KEY.'))return;setBusy(true);try{const response=await fetch('/api/admin/instagram/renderer-key',{method:'POST'}),data=await response.json() as {key:string;error?:string};if(!response.ok)throw Error(data.error||'Could not create renderer connection');setKey(data.key);setMessage('Copy this key into the GitHub repository secret. It is shown only until this page reloads. Never paste it in chat.')}catch(error){setMessage((error as Error).message)}finally{setBusy(false)}}

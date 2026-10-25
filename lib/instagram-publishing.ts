@@ -3,6 +3,16 @@ import {collectionSources,sourceIndex,readSource,canonicalJobUrl,indiaToday} fro
 
 export type SocialEnv={DB:D1Database;REEL_MEDIA?:KVNamespace;SITE_URL:string;JOBVEYLO_AUTOMATION_KEY?:string;INSTAGRAM_ACCESS_TOKEN?:string;INSTAGRAM_ACCOUNT_ID?:string};
 export function instagramReady(env:SocialEnv){return !!env.REEL_MEDIA&&!!env.INSTAGRAM_ACCESS_TOKEN&&/^\d+$/.test(env.INSTAGRAM_ACCOUNT_ID||'')}
+export async function checkInstagramConnection(env:SocialEnv,fetcher:typeof fetch=fetch){
+ if(!instagramReady(env))return {state:'connection_required',message:'The collector needs Instagram credentials and media storage.'};
+ try{
+  const response=await fetcher('https://graph.instagram.com/v25.0/'+env.INSTAGRAM_ACCOUNT_ID+'?fields=id,username',{headers:{Authorization:'Bearer '+env.INSTAGRAM_ACCESS_TOKEN},redirect:'error',signal:AbortSignal.timeout(15000)});
+  const data:any=await response.json();
+  if(!response.ok||data.error)return {state:'rejected',message:'Instagram rejected the profile check.',status:response.status,code:Number(data.error?.code)||null,subcode:Number(data.error?.error_subcode)||null};
+  if(String(data.username).toLowerCase()!=='jobveylo')return {state:'wrong_account',message:'The token does not identify @jobveylo.'};
+  return {state:'connected',message:'Instagram authenticated @jobveylo successfully.'};
+ }catch{return {state:'unreachable',message:'Instagram could not be reached. No post was attempted.'}}
+}
 export async function automationAuthorized(request:Request,key?:string,fallbackHash?:string|null){
  if((!key||key.length<32)&&!/^\p{ASCII_Hex_Digit}{64}$/u.test(fallbackHash||''))return false;
  const supplied=request.headers.get('authorization')||'';
@@ -85,12 +95,15 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  if(!reserved)return {state:'already_checked'};
  const row=await env.DB.prepare("UPDATE social_jobs SET status='creating',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='media_ready' AND l.status='published' ORDER BY s.priority,s.created_at LIMIT 1) AND status='media_ready' RETURNING listing_id,media_key,media_created_at").bind(now+120000).first<{listing_id:string;media_key:string;media_created_at:string}>();
  if(!row)return {state:'waiting_for_media'};
+ let stage='profile authentication';
  try{
   const profile=await graph(account+'?fields=id,username');if(String(profile.username).toLowerCase()!=='jobveylo')throw Error('Connected Instagram account is not JobVeylo');
+  stage='source verification';
   const stored=await env.DB.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();if(!stored)throw Error('Listing is unavailable');
   const job={...JSON.parse(stored.data),id:row.listing_id};
   if((job.deadline!=='Not specified'&&job.deadline<indiaToday())||!await activeEmployer(job,fetcher))throw Error('Employer opening could not be reverified');
   if(!row.media_created_at||now-Date.parse(row.media_created_at)>6*86400000)throw Error('Reel media has expired');
+  stage='media creation';
   const media=await graph(account+'/media',{media_type:'REELS',video_url:env.SITE_URL+'/api/reel-media/'+row.listing_id+'.mp4',caption:reelCaption(job,env.SITE_URL),share_to_feed:'true'});
   if(!/^\d+$/.test(media.id||''))throw Error('Instagram did not return a container ID');
   await env.DB.batch([
@@ -98,8 +111,9 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
    env.DB.prepare("UPDATE instagram_slots SET listing_id=?,status='processing' WHERE slot=?").bind(row.listing_id,slot),
   ]);
   return {state:'processing',id:row.listing_id};
- }catch{
-  await env.DB.prepare("UPDATE social_jobs SET status='held',last_error='Instagram connection, source verification or media creation failed. Inspect configuration before retrying.',lease_until=0 WHERE listing_id=?").bind(row.listing_id).run();
+ }catch(error){
+  const code=/^Instagram API request failed \(code (\d+)\)$/.exec((error as Error)?.message||'')?.[1];
+  await env.DB.prepare("UPDATE social_jobs SET status='held',last_error=?,lease_until=0 WHERE listing_id=?").bind('Instagram '+stage+' failed'+(code?' (API code '+code+')':'')+'. Inspect configuration before retrying.',row.listing_id).run();
   return {state:'held'};
  }
 }
