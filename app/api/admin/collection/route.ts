@@ -16,6 +16,11 @@ export async function POST(request:Request){
  const raw=await request.text();if(raw.length>5000)return Response.json({error:'Request too large'},{status:413,headers});
  let action:any;try{action=JSON.parse(raw)}catch{return Response.json({error:'Invalid request'},{status:400,headers})}
  try{
+  if(action.action==='renderer-status'||action.action==='render'){
+   if(!bindings().COLLECTOR)return Response.json({error:'Collector is not connected.'},{status:503,headers});
+   const result=await bindings().COLLECTOR!.fetch('https://collector/'+(action.action==='render'?'render':'renderer-status'),{method:'POST'});
+   return Response.json(await result.json(),{status:result.status,headers});
+  }
   if(action.action==='instagram-check'){
    if(!bindings().COLLECTOR)return Response.json({error:'Collector is not connected.'},{status:503,headers});
    const result=await bindings().COLLECTOR!.fetch('https://collector/instagram-check',{method:'POST'});

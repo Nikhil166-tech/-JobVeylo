@@ -1,3 +1,4 @@
+import {dispatchRenderer,rendererStatus} from '../lib/renderer-dispatch.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -7,7 +8,7 @@ import {makeCollectedJob,collectionSources} from '../lib/collection-sources.ts';
 import {runAutomaticPublishing,locationConflict,expiredDeadline} from '../lib/automatic-publishing.ts';
 import {claimReel,automationAuthorized,runInstagramPublishing,checkInstagramConnection} from '../lib/instagram-publishing.ts';
 function database(){
- const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
+ const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql','0005_renderer_dispatch.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
  for(const source of collectionSources)sqlite.prepare('INSERT INTO collection_sources(id) VALUES(?)').run(source.id);
  const db={prepare(sql){let values=[];const q={bind(...args){values=args;return q},async first(){return sqlite.prepare(sql).get(...values)||null},async all(){return {results:sqlite.prepare(sql).all(...values),success:true}},async run(){const r=sqlite.prepare(sql).run(...values);return {success:true,meta:{changes:Number(r.changes)}}}};return q},async batch(queries){sqlite.exec('BEGIN');try{const results=[];for(const q of queries)results.push(await q.run());sqlite.exec('COMMIT');return results}catch(error){sqlite.exec('ROLLBACK');throw error}}};return {db,sqlite};
 }
@@ -107,4 +108,26 @@ test('Instagram connection diagnostics expose only safe codes and verify the int
  const unreadable=await checkInstagramConnection(env,async()=>new Response('upstream unavailable',{status:502}));assert.equal(unreadable.state,'invalid_response');assert.equal(unreadable.status,502);
  const failed=await checkInstagramConnection(env,async()=>{throw new TypeError('private-test-token')});assert.match(failed.message,/TypeError/);assert.equal(JSON.stringify(failed).includes('private-test-token'),false);
  assert.equal((await checkInstagramConnection({...env,INSTAGRAM_ACCESS_TOKEN:'token\nwith-break'},async()=>{throw Error('must not fetch')})).state,'invalid_token_format');
+});
+
+test('Cloudflare render dispatch is scoped, once per slot, and keeps credentials private',async()=>{
+ const {db,sqlite}=database();socialFixture(sqlite);sqlite.prepare("UPDATE social_jobs SET status='waiting_media'").run();let calls=0;
+ const env={DB:db,GITHUB_RENDER_TOKEN:'private-test-token'},now=Date.now();
+ const fetcher=async(url,options)=>{calls++;assert.equal(url,'https://api.github.com/repos/Nikhil166-tech/-JobVeylo/actions/workflows/render-job-reel.yml/dispatches');assert.equal(options.redirect,'manual');assert.deepEqual(JSON.parse(options.body),{ref:'main'});return Response.json({workflow_run_id:123})};
+ assert.equal((await dispatchRenderer(env,{now,fetcher})).state,'dispatched');assert.equal((await dispatchRenderer(env,{now,fetcher})).state,'already_requested');assert.equal(calls,1);
+ const status=await rendererStatus(env);assert.equal(status.configured,true);assert.equal(status.last.run_id,'123');assert.equal(JSON.stringify(status).includes(env.GITHUB_RENDER_TOKEN),false);sqlite.close();
+});
+test('render dispatch respects pause, queue buffers, and expired rendering leases',async()=>{
+ const {db,sqlite}=database();socialFixture(sqlite);const now=Date.now(),env={DB:db,GITHUB_RENDER_TOKEN:'private-test-token'};
+ assert.equal((await dispatchRenderer({DB:db})).state,'connection_required');
+ sqlite.prepare('UPDATE publishing_control SET instagram_enabled=0').run();assert.equal((await dispatchRenderer(env)).state,'paused');sqlite.prepare('UPDATE publishing_control SET instagram_enabled=1').run();
+ sqlite.prepare("UPDATE social_jobs SET status='rendering',lease_until=1").run();
+ assert.equal((await dispatchRenderer(env,{now,fetcher:async()=>new Response(null,{status:204})})).state,'dispatched');
+ sqlite.prepare("INSERT INTO social_jobs(listing_id,priority,status,created_at) VALUES('buffer-a',0,'media_ready','now'),('buffer-b',0,'media_ready','now')").run();
+ assert.equal((await dispatchRenderer(env,{now:now+1800000,fetcher:async()=>{throw Error('must not fetch')}})).state,'buffered');sqlite.close();
+});
+test('render dispatch rejects redirects and never retries an ambiguous request in its slot',async()=>{
+ const {db,sqlite}=database();socialFixture(sqlite);sqlite.prepare("UPDATE social_jobs SET status='waiting_media'").run();const env={DB:db,GITHUB_RENDER_TOKEN:'private-test-token'},now=Date.now();
+ assert.equal((await dispatchRenderer(env,{now,fetcher:async()=>new Response(null,{status:302,headers:{Location:'https://example.com'}})})).state,'rejected');
+ let calls=0;const fetcher=async()=>{calls++;throw Error('private-test-token')};assert.equal((await dispatchRenderer(env,{now:now+1800000,fetcher})).state,'uncertain');assert.equal((await dispatchRenderer(env,{now:now+1800000,fetcher})).state,'already_requested');assert.equal(calls,1);sqlite.close();
 });

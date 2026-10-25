@@ -96,6 +96,8 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  if(!options.startNew)return {state:'polled'};
  const inFlight=await env.DB.prepare("SELECT listing_id FROM social_jobs WHERE status IN ('processing','creating','publishing') LIMIT 1").first();
  if(inFlight)return {state:'processing'};
+ const ready=await env.DB.prepare("SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='media_ready' AND l.status='published' LIMIT 1").first();
+ if(!ready)return {state:'waiting_for_media'};
  const slot=Math.floor(now/1800000);
  const reserved=await env.DB.prepare("INSERT INTO instagram_slots(slot,status,created_at) VALUES(?,'checking',?) ON CONFLICT DO NOTHING RETURNING slot").bind(slot,new Date(now).toISOString()).first();
  if(!reserved)return {state:'already_checked'};
