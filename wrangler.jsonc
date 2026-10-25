@@ -32,6 +32,7 @@
     "enabled": false
   },
   "vars": {
+    "INSTAGRAM_ACCOUNT_ID": "17841458906579723",
     "SITE_URL": "https://jobveylo.jobveylo.workers.dev",
     "OWNER_GITHUB_ID": "135293869"
   },

@@ -10,7 +10,7 @@
  "triggers":{"crons":["*/30 * * * *","5,10,15,20,25,35,40,45,50,55 * * * *"]},
  "keep_vars":true,
  "kv_namespaces":[{"binding":"REEL_MEDIA","id":"1542250986ea4c669bd86810c2710b2c"}],
- "vars":{"SITE_URL":"https://jobveylo.jobveylo.workers.dev"},
+ "vars":{"SITE_URL":"https://jobveylo.jobveylo.workers.dev","INSTAGRAM_ACCOUNT_ID":"17841458906579723"},
  "observability":{"enabled":true},
  "services":[{"binding":"SELF","service":"jobveylo-collector"}],
  "d1_databases":[{"binding":"DB","database_name":"jobveylo-db","database_id":"83a413f5-ee1a-4d13-9782-927ede1f20e1","migrations_dir":"cloudflare/migrations"}]
