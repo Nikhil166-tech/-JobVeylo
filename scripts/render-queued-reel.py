@@ -12,7 +12,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
 def api(method,key,data=None,job_id=None):
     url=ORIGIN+'/api/automation/reels'+('?id='+job_id if job_id else '')
-    req=urllib.request.Request(url,data=data,method=method,headers={'Authorization':'Bearer '+key,'Content-Type':'video/mp4' if method=='PUT' else 'application/json'})
+    req=urllib.request.Request(url,data=data,method=method,headers={'Authorization':'Bearer '+key,'User-Agent':'JobVeylo-Reel-Renderer/1.0','Content-Type':'video/mp4' if method=='PUT' else 'application/json'})
     try:
         with urllib.request.build_opener(NoRedirect).open(req,timeout=45) as response:return json.load(response)
     except urllib.error.HTTPError as error:raise RuntimeError('Automation endpoint returned HTTP '+str(error.code)) from None
