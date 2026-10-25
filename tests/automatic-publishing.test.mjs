@@ -99,8 +99,12 @@ test('interrupted Instagram requests are held without blocking other jobs',async
 
 test('Instagram connection diagnostics expose only safe codes and verify the intended account',async()=>{
  const env={REEL_MEDIA:{},INSTAGRAM_ACCOUNT_ID:'123',INSTAGRAM_ACCESS_TOKEN:'private-test-token'};
- const ok=await checkInstagramConnection(env,async()=>Response.json({id:'123',username:'jobveylo'}));assert.equal(ok.state,'connected');
+ const ok=await checkInstagramConnection(env,async(url,options)=>{assert.equal(options.redirect,'manual');return Response.json({id:'123',username:'jobveylo'})});assert.equal(ok.state,'connected');
+ assert.equal((await checkInstagramConnection(env,async()=>new Response(null,{status:302,headers:{Location:'https://example.com'}}))).state,'redirect_refused');
  const rejected=await checkInstagramConnection(env,async()=>Response.json({error:{code:190,error_subcode:463,message:'private-test-token'}},{status:400}));assert.equal(rejected.code,190);assert.equal(rejected.subcode,463);assert.equal(JSON.stringify(rejected).includes('private-test-token'),false);
  assert.equal((await checkInstagramConnection(env,async()=>Response.json({username:'another-account'}))).state,'wrong_account');
  assert.equal((await checkInstagramConnection({},async()=>{throw Error('must not fetch')})).state,'connection_required');
+ const unreadable=await checkInstagramConnection(env,async()=>new Response('upstream unavailable',{status:502}));assert.equal(unreadable.state,'invalid_response');assert.equal(unreadable.status,502);
+ const failed=await checkInstagramConnection(env,async()=>{throw new TypeError('private-test-token')});assert.match(failed.message,/TypeError/);assert.equal(JSON.stringify(failed).includes('private-test-token'),false);
+ assert.equal((await checkInstagramConnection({...env,INSTAGRAM_ACCESS_TOKEN:'token\nwith-break'},async()=>{throw Error('must not fetch')})).state,'invalid_token_format');
 });

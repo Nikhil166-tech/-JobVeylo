@@ -3,15 +3,20 @@ import {collectionSources,sourceIndex,readSource,canonicalJobUrl,indiaToday} fro
 
 export type SocialEnv={DB:D1Database;REEL_MEDIA?:KVNamespace;SITE_URL:string;JOBVEYLO_AUTOMATION_KEY?:string;INSTAGRAM_ACCESS_TOKEN?:string;INSTAGRAM_ACCOUNT_ID?:string};
 export function instagramReady(env:SocialEnv){return !!env.REEL_MEDIA&&!!env.INSTAGRAM_ACCESS_TOKEN&&/^\d+$/.test(env.INSTAGRAM_ACCOUNT_ID||'')}
+const instagramToken=(env:SocialEnv)=>String(env.INSTAGRAM_ACCESS_TOKEN||'').trim();
 export async function checkInstagramConnection(env:SocialEnv,fetcher:typeof fetch=fetch){
  if(!instagramReady(env))return {state:'connection_required',message:'The collector needs Instagram credentials and media storage.'};
+ const token=instagramToken(env);
+ if(!/^[\x21-\x7e]+$/.test(token))return {state:'invalid_token_format',message:'The saved token contains spaces, line breaks or non-ASCII characters. Save only the complete token string copied from Meta.'};
  try{
-  const response=await fetcher('https://graph.instagram.com/v25.0/'+env.INSTAGRAM_ACCOUNT_ID+'?fields=id,username',{headers:{Authorization:'Bearer '+env.INSTAGRAM_ACCESS_TOKEN},redirect:'error',signal:AbortSignal.timeout(15000)});
-  const data:any=await response.json();
+  const response=await fetcher('https://graph.instagram.com/v25.0/'+env.INSTAGRAM_ACCOUNT_ID+'?fields=id,username',{headers:{Authorization:'Bearer '+token,'User-Agent':'JobVeylo-Publisher/1.0'},redirect:'manual',signal:AbortSignal.timeout(15000)});
+  if(response.status>=300&&response.status<400)return {state:'redirect_refused',message:'Instagram returned a redirect. Credentials were not forwarded.',status:response.status};
+  const data:any=await response.json().catch(()=>null);
+  if(!data)return {state:'invalid_response',message:'Instagram returned an unreadable response (HTTP '+response.status+').',status:response.status};
   if(!response.ok||data.error)return {state:'rejected',message:'Instagram rejected the profile check.',status:response.status,code:Number(data.error?.code)||null,subcode:Number(data.error?.error_subcode)||null};
   if(String(data.username).toLowerCase()!=='jobveylo')return {state:'wrong_account',message:'The token does not identify @jobveylo.'};
   return {state:'connected',message:'Instagram authenticated @jobveylo successfully.'};
- }catch{return {state:'unreachable',message:'Instagram could not be reached. No post was attempted.'}}
+ }catch(error){const kind=['TypeError','AbortError','TimeoutError'].includes((error as Error)?.name)?(error as Error).name:'request error';const detail=String((error as Error)?.message||'').split(token).join('[redacted]').replace(/Bearer\s+\S+/gi,'Bearer [redacted]').replace(/IG[A-Za-z0-9_-]{15,}/g,'[redacted]').slice(0,240);return {state:'unreachable',message:'Instagram request failed ('+kind+'): '+detail+'. No post was attempted.'}}
 }
 export async function automationAuthorized(request:Request,key?:string,fallbackHash?:string|null){
  if((!key||key.length<32)&&!/^\p{ASCII_Hex_Digit}{64}$/u.test(fallbackHash||''))return false;
@@ -60,9 +65,10 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  if(!control?.instagram_enabled)return {state:'paused'};
  // A terminated request may have reached Meta. Hold it for reconciliation instead of retrying or blocking the entire queue.
  await env.DB.prepare("UPDATE social_jobs SET status='held',last_error='Interrupted Instagram request; reconcile before retrying.',lease_until=0 WHERE status IN ('creating','publishing') AND lease_until<?").bind(now).run();
- const token=env.INSTAGRAM_ACCESS_TOKEN!,account=env.INSTAGRAM_ACCOUNT_ID!;
+ const token=instagramToken(env),account=env.INSTAGRAM_ACCOUNT_ID!;
  async function graph(path:string,body?:Record<string,string>){
-  const response=await fetcher('https://graph.instagram.com/v25.0/'+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{})},body:body?new URLSearchParams(body):undefined,signal:AbortSignal.timeout(15000),redirect:'error'});
+  const response=await fetcher('https://graph.instagram.com/v25.0/'+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'User-Agent':'JobVeylo-Publisher/1.0',...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{})},body:body?new URLSearchParams(body):undefined,signal:AbortSignal.timeout(15000),redirect:'manual'});
+  if(response.status>=300&&response.status<400)throw Error('Instagram redirect refused');
   const data:any=await response.json();if(!response.ok||data.error)throw Error('Instagram API request failed'+(data.error?.code?' (code '+Number(data.error.code)+')':''));return data;
  }
  // Only one invocation may process a particular container at a time.
