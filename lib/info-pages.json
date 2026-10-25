@@ -17,7 +17,7 @@
       ],
       [
         "How we work",
-        "Listings go through editorial review before publication. Read our editorial policy for source checks, corrections and how we handle expired openings."
+        "Listings may be published automatically after checks against an approved employer feed, or prepared manually by the owner. Read our editorial policy for the limits of automatic extraction, corrections and expired openings."
       ]
     ]
   },
@@ -31,11 +31,11 @@
       ],
       [
         "Before publication",
-        "The editor checks the job title, recruiting organisation, application link, location restrictions, eligibility and stated deadline against the source. Summaries must distinguish required qualifications from preferences. We do not invent salaries, vacancy counts, selection rounds or graduation batches."
+        "Automatic publication checks that an opening remains in an approved employer feed, suppresses duplicate links and excludes records with known conflicts, expired dates or missing original notices. Freshers and roles accepting up to three years are prioritised. Automatic pages are brief factual summaries; they do not claim a human checked every requirement. Manual listings may receive additional editorial review. We do not invent salaries, vacancy counts, selection rounds or graduation batches."
       ],
       [
         "What “source checked” means",
-        "The date records when an editor reviewed the source. It is not an independent guarantee of hiring, safety, accuracy or continuing availability. Sources can change after review; applicants should read the latest original notice before applying."
+        "The date records an automated or manual source check. It is not an independent guarantee of hiring, safety, accuracy or continuing availability. Automatic extraction can miss details or misclassify experience. Applicants should read the complete latest original notice before applying."
       ],
       [
         "Updates and closed jobs",

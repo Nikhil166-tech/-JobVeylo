@@ -1,6 +1,7 @@
 import {load} from 'cheerio';
 import {plain} from './job-import.ts';
 import {input} from './validation.ts';
+import {sourcePriorityHint} from './job-priority.ts';
 
 export const collectionSources=[
  {id:'ashby-aiprise',label:'AiPrise · Ashby',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/aiprise?includeCompensation=true',company:'AiPrise'},
@@ -22,7 +23,9 @@ export function canonicalJobUrl(value:string){
 const clean=(v:unknown,max=10000)=>typeof v!=='string'?'':(/<\/?[a-z][^>]*>|&lt;/i.test(v)?plain(plain(v)):v.replace(/\r/g,'').replace(/[ \t]+/g,' ').trim()).slice(0,max);
 export function makeCollectedJob(source:CollectionSource,raw:{title:string;url:string;description:string;company?:string;location?:string;remote?:boolean;salary?:string;deadline?:string;requirements?:string[];government?:boolean}):CollectedJob{
  const description=clean(raw.description),government=!!raw.government;
- const experience=description.match(/\b\d+(?:\s*[-–]\s*\d+|\+)?\s*(?:years?|months?)[^\n.!?]{0,100}\bexperience\b/i)?.[0]?.slice(0,100)||'Not specified';
+ const experienceLines=description.split('\n').filter(line=>line.length<800&&/experience|professional|\byears?\s+(?:of|in|as)\b/i.test(line));
+ const experienceFacts=experienceLines.flatMap(line=>[...line.matchAll(/\b\d+(?:\s*[-–]\s*\d+\+?|\+)?\s*(?:years?|months?)\b/gi)].map(match=>match[0].replace(/–/g,'-')));
+ const experience=[...new Set(experienceFacts)].slice(0,4).join('; ').slice(0,100)||'Not specified';
  const education=description.split('\n').find(line=>/\b(?:bachelor|master(?:['’]s|s)?\s+(?:degree|of)|degree|diploma|B\.?Tech)\b/i.test(line)&&line.length<500)||'Not specified';
  const location=clean(raw.location||'Not specified',150);
  const region=government||/\b(?:India|Bengaluru|Bangalore|Hyderabad|Mumbai|Delhi|Pune|Chennai)\b/i.test(location)?'India':/\b(?:US|USA|United States|Canada|Americas|Brazil|Mexico)\b/i.test(location)?'Americas':/\b(?:Europe|UK|United Kingdom|Germany|France|London|Ireland|Netherlands)\b/i.test(location)?'Europe':/\b(?:Singapore|Australia|Japan|Asia|New Zealand)\b/i.test(location)?'Asia Pacific':/\b(?:worldwide|anywhere|global)\b/i.test(location)?'Worldwide':'Other';
@@ -46,7 +49,7 @@ export function sourceIndex(source:CollectionSource,text:string){
  if(source.kind==='upsc')return upscCandidates(source,text);
  const data=JSON.parse(text);const rows=list(source.kind==='lever'?data:data.jobs).filter(row=>source.kind!=='ashby'||row.isListed===true);
  if(rows.some(row=>!row||typeof row.id!=='string'&&typeof row.id!=='number'))throw Error('Source returned a job without a stable identifier');
- const sorted=rows.sort((a,b)=>String(b.publishedAt||b.first_published||b.createdAt||'').localeCompare(String(a.publishedAt||a.first_published||a.createdAt||'')));
+ const sorted=rows.sort((a,b)=>sourcePriorityHint(a)-sourcePriorityHint(b)||String(b.publishedAt||b.first_published||b.createdAt||'').localeCompare(String(a.publishedAt||a.first_published||a.createdAt||'')));
  return {rows:sorted,activeIds:rows.map(row=>String(row.id)),complete:true};
 }
 export function candidateFromRow(source:CollectionSource,row:any):Candidate{

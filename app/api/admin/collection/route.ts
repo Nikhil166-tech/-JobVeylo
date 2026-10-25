@@ -26,6 +26,10 @@ export async function POST(request:Request){
    await db().prepare('UPDATE collection_control SET enabled=? WHERE id=1').bind(action.action==='resume'?1:0).run();
    return Response.json({message:action.action==='resume'?'Collection resumed.':'Collection paused.'},{headers});
   }
+  if(action.action==='publishing'&&typeof action.enabled==='boolean'){
+   await db().prepare('UPDATE publishing_control SET enabled=?,instagram_enabled=? WHERE id=1').bind(action.enabled?1:0,action.enabled?1:0).run();
+   return Response.json({message:action.enabled?'Automatic publishing enabled: one job per half-hour slot, with 0–3-year roles first.':'Website and Instagram automatic publishing paused.'},{headers});
+  }
   if(action.action==='source'&&typeof action.id==='string'&&typeof action.enabled==='boolean'){
    await db().prepare('UPDATE collection_sources SET enabled=? WHERE id=?').bind(action.enabled?1:0,action.id).run();
    return Response.json({message:'Source setting saved.'},{headers});

@@ -1,4 +1,5 @@
 import {collectionSources,sourceIndex,candidateFromRow,canonicalJobUrl,readSource,type CollectionSource} from './collection-sources.ts';
+import {careerPriority} from './job-priority.ts';
 
 export const maxPendingPerSource=40,maxNewPerSource=4;
 export async function collectionHash(value:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),n=>n.toString(16).padStart(2,'0')).join('')}
@@ -63,18 +64,22 @@ export async function runCollection(db:D1Database,options:{fetcher?:typeof fetch
    results.push({source:source.id,fetched,added,updated,outcome,message});
   }
   await db.prepare('DELETE FROM collection_runs WHERE finished_at<?').bind(new Date(now-14*86400000).toISOString()).run();
-  return {state:'completed',message:'Collection finished. New openings require owner review.',results};
+  return {state:'completed',message:'Collection finished. Verified openings enter the automatic publishing queue.',results};
  }finally{
   await db.prepare('UPDATE collection_control SET lease_until=0,last_finished=?,last_summary=? WHERE id=1 AND lease_until=?').bind(new Date().toISOString(),JSON.stringify(results),lease).run();
  }
 }
 export async function collectionDashboard(db:D1Database){
  await seedCollection(db);
- const [control,sources,items,runs]=await Promise.all([
+ const [control,sources,items,runs,publishing,social,slots,holds]=await Promise.all([
   db.prepare('SELECT enabled,last_started,last_finished,last_summary,lease_until FROM collection_control WHERE id=1').first(),
   db.prepare('SELECT * FROM collection_sources').all<{id:string}>(),
   db.prepare("SELECT * FROM collection_items WHERE status='pending' ORDER BY missing_count,first_seen DESC LIMIT 150").all<{data:string}>(),
   db.prepare('SELECT * FROM collection_runs ORDER BY finished_at DESC LIMIT 15').all(),
+  db.prepare('SELECT * FROM publishing_control WHERE id=1').first(),
+  db.prepare('SELECT status,COUNT(*) AS total FROM social_jobs GROUP BY status').all(),
+  db.prepare('SELECT * FROM publishing_slots ORDER BY slot DESC LIMIT 5').all(),
+  db.prepare('SELECT * FROM publishing_holds').all<{collection_id:string;reason:string}>(),
  ]);
- return {control,sources:sources.results.map(row=>({...row,...collectionSources.find(source=>source.id===row.id)})),items:items.results.map(row=>({...row,job:JSON.parse(row.data),data:undefined})),runs:runs.results};
+ return {control,publishing,social:social.results,slots:slots.results,sources:sources.results.map(row=>({...row,...collectionSources.find(source=>source.id===row.id)})),items:items.results.map(row=>({...row,job:JSON.parse(row.data),priority:careerPriority(JSON.parse(row.data)),hold:holds.results.find(h=>h.collection_id===(row as any).id)?.reason,data:undefined})).sort((a,b)=>a.priority.rank-b.priority.rank),runs:runs.results};
 }

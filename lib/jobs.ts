@@ -1,5 +1,6 @@
 import {bindings} from './platform';
 import seeds from './seeds.json';
+import {careerPriority} from './job-priority';
 export type Job=typeof seeds[number];
 export const db=()=>bindings().DB;
 type ListingRow={id:string;data:string;status:string;version:number};
@@ -10,7 +11,7 @@ export function effective(j:Job):Job{
 const fromRow=(r:ListingRow):Job=>effective({...JSON.parse(r.data),id:r.id,status:r.status,version:r.version});
 export async function allJobs():Promise<Job[]>{
   const rows=await db().prepare('SELECT id,data,status,version FROM listings').all<ListingRow>();
-  return rows.results.map(fromRow).sort((a,b)=>b.checked.localeCompare(a.checked));
+  return rows.results.map(fromRow).sort((a,b)=>careerPriority(a).rank-careerPriority(b).rank||b.checked.localeCompare(a.checked));
 }
 export async function getJob(id:string):Promise<Job|undefined>{
   const row=await db().prepare('SELECT id,data,status,version FROM listings WHERE id=?').bind(id).first<ListingRow>();

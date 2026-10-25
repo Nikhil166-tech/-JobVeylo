@@ -26,6 +26,7 @@
   "account_id": "a354137d11d3cc1a66ae5d8e5d559050",
   "workers_dev": true,
   "keep_vars": true,
+  "kv_namespaces": [{"binding":"REEL_MEDIA","id":"1542250986ea4c669bd86810c2710b2c"}],
   "services": [{"binding":"COLLECTOR","service":"jobveylo-collector"}],
   "observability": {
     "enabled": false

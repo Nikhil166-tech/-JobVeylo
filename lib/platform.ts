@@ -14,6 +14,10 @@ export type Bindings={
   WHATSAPP_PHONE_NUMBER_ID?:string;
   WHATSAPP_BUSINESS_NUMBER?:string;
   WHATSAPP_SIGNUPS_ENABLED?:string;
+  REEL_MEDIA?:KVNamespace;
+  JOBVEYLO_AUTOMATION_KEY?:string;
+  INSTAGRAM_ACCESS_TOKEN?:string;
+  INSTAGRAM_ACCOUNT_ID?:string;
 };
 export const bindings=()=>env as unknown as Bindings;
 export const requestOrigin=()=>new URL(bindings().SITE_URL).origin;
