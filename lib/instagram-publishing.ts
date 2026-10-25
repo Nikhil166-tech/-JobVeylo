@@ -49,8 +49,24 @@ export async function claimReel(db:D1Database,now=Date.now()){
  }
  return {...job,id:row.listing_id,career:careerPriority(job).label};
 }
+export function reelHashtags(job:any){
+ const title=String(job.title||'');
+ const role=job.category==='Government'?'GovernmentJobs':[
+  [/front[ -]?end/i,'FrontendDeveloper'],[/back[ -]?end/i,'BackendDeveloper'],[/full[ -]?stack/i,'FullStackDeveloper'],
+  [/software|developer/i,'SoftwareEngineer'],[/data scientist/i,'DataScienceJobs'],[/data analyst/i,'DataAnalyst'],
+  [/devops|site reliability/i,'DevOpsJobs'],[/quality assurance|\bQA\b|\bSDET\b|test engineer/i,'TestingJobs'],
+  [/sales|account executive/i,'SalesJobs'],[/marketing/i,'MarketingJobs'],[/human resources|recruiter|\bHR\b/i,'HRJobs'],
+  [/design/i,'DesignJobs'],[/engineer/i,'EngineeringJobs'],
+ ].find(([pattern])=>(pattern as RegExp).test(title))?.[1]||'JobOpenings';
+ const location=String(job.location||'');
+ const place=job.remote?'RemoteJobs':job.region==='India'||/\bIndia\b/i.test(location)?'JobsInIndia':/\bUnited States\b|\bUSA\b/i.test(location)?'JobsInUSA':job.region==='Europe'?'JobsInEurope':'Hiring';
+ const priority=careerPriority(job).rank,career=priority===0?'FreshersJobs':priority===1?'EarlyCareerJobs':priority===2?'ExperiencedJobs':'JobOpenings';
+ return [...new Set(['JobVeylo',String(role),place,career,'ATSResume'])].map(tag=>'#'+tag).join(' ');
+}
 export function reelCaption(job:any,origin:string){
- return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}\n\n🔗 Details & application:\n${origin}/jobs/${job.id}\n\nVisit JobVeylo to open the application link.\nJobVeylo • Check the latest employer notice before applying.\n\n#JobVeylo #JobOpenings #Careers`;
+ const salary=String(job.salary||'').trim();
+ const pay=salary&&!/^(?:not\b|n\/?a\b|tbd\b|unknown\b|undisclosed\b|competitive\b|negotiable\b|see\b)/i.test(salary)?'\n💰 Salary: '+salary.slice(0,150):'';
+ return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}${pay}\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\n🔗 Job details + resume tool:\n${origin}/jobs/${job.id}\n\nOpen “Tailor resume for this job” on the job page.\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
 }
 async function activeEmployer(job:any,fetcher:typeof fetch){
  const source=collectionSources.find(s=>s.company===job.company&&['ashby','lever','greenhouse'].includes(s.kind));

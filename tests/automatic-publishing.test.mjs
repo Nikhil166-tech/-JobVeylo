@@ -6,7 +6,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {careerPriority,sourcePriorityHint} from '../lib/job-priority.ts';
 import {makeCollectedJob,collectionSources} from '../lib/collection-sources.ts';
 import {runAutomaticPublishing,locationConflict,expiredDeadline} from '../lib/automatic-publishing.ts';
-import {claimReel,automationAuthorized,runInstagramPublishing,checkInstagramConnection} from '../lib/instagram-publishing.ts';
+import {claimReel,automationAuthorized,runInstagramPublishing,checkInstagramConnection,reelHashtags,reelCaption} from '../lib/instagram-publishing.ts';
 function database(){
  const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql','0005_renderer_dispatch.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
  for(const source of collectionSources)sqlite.prepare('INSERT INTO collection_sources(id) VALUES(?)').run(source.id);
@@ -130,4 +130,14 @@ test('render dispatch rejects redirects and never retries an ambiguous request i
  const {db,sqlite}=database();socialFixture(sqlite);sqlite.prepare("UPDATE social_jobs SET status='waiting_media'").run();const env={DB:db,GITHUB_RENDER_TOKEN:'private-test-token'},now=Date.now();
  assert.equal((await dispatchRenderer(env,{now,fetcher:async()=>new Response(null,{status:302,headers:{Location:'https://example.com'}})})).state,'rejected');
  let calls=0;const fetcher=async()=>{calls++;throw Error('private-test-token')};assert.equal((await dispatchRenderer(env,{now:now+1800000,fetcher})).state,'uncertain');assert.equal((await dispatchRenderer(env,{now:now+1800000,fetcher})).state,'already_requested');assert.equal(calls,1);sqlite.close();
+});
+
+test('reel captions promote the selected-job resume tool and use truthful relevant hashtags',()=>{
+ const job={id:'test-job',title:'Software Engineer',company:'Example',experience:'0–2 years',education:'B.Tech',location:'Bengaluru, India',region:'India',salary:'Not disclosed',category:'Private'};
+ const tags=reelHashtags(job);assert.equal(tags,'#JobVeylo #SoftwareEngineer #JobsInIndia #FreshersJobs #ATSResume');
+ const caption=reelCaption(job,'https://example.com');assert.match(caption,/ATS-friendly resume for this job/);assert.match(caption,/https:\/\/example.com\/jobs\/test-job/);assert.equal(caption.includes('💰'),false);
+ assert.equal(reelHashtags({...job,experience:'2–4 years'}).includes('#FreshersJobs'),false);assert.match(reelHashtags({...job,experience:'2–4 years'}),/#EarlyCareerJobs/);
+ assert.match(reelHashtags({...job,title:'Marketing Manager',experience:'7+ years',remote:true}),/#MarketingJobs #RemoteJobs #ExperiencedJobs/);
+ assert.match(reelHashtags({...job,experience:'Not specified'}),/#JobOpenings/);assert.equal(reelHashtags({...job,experience:'Not specified'}).includes('#FreshersJobs'),false);
+ assert.match(reelCaption({...job,salary:'INR 30–50 lakh per year'},'https://example.com'),/💰 Salary: INR 30–50/);
 });

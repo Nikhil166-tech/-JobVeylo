@@ -15,3 +15,6 @@ node_modules/
 dist/
 .dev.vars*
 .vinext/
+
+__pycache__/
+*.pyc
