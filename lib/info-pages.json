@@ -85,11 +85,15 @@
       ],
       [
         "Analytics and advertising",
-        "JobVeylo currently includes no advertising or analytics scripts. This notice will be updated before introducing new data collection, tracking or advertising features."
+        "JobVeylo has no active advertising network. Optional Google Analytics is described below and loads only after you allow it using Privacy choices."
       ],
       [
         "Your choices",
         "You can clear local saved jobs and older drafts below or through your browser settings. Clearing local storage does not remove listings stored in the owner dashboard. Contact us with privacy questions or requests about information you have sent us."
+      ],
+      [
+        "Optional visitor analytics",
+        "With your permission, Google Analytics measures public page visits, approximate unique users, traffic sources, Apply clicks and resume-tool clicks. It uses analytics cookies and processes technical information such as device/browser details and approximate location. Counts are estimates and exclude visitors who decline or block analytics. Advertising personalization and Google signals are disabled. We do not send resume text, form values, names, email addresses or phone numbers as analytics events. Admin and authentication pages are excluded. Shared links contain campaign tags to identify their source. Use Privacy choices to allow or decline analytics at any time. Your choice is stored in this browser. Google handles data under its privacy policy at https://policies.google.com/privacy."
       ]
     ]
   },

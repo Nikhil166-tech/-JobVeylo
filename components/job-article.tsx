@@ -68,11 +68,11 @@ export default function JobArticle({job:j,preview=false}:{job:Job;preview?:boole
       <h3 style={{marginTop:0}}>{closed?'This opening is closed':'Ready for your next step?'}</h3>
       <p className="sub">{closed?'Keep this page for reference and browse other opportunities.':'Check the source before submitting your application.'}</p>
       <dl><dt>Closing date</dt><dd>{j.deadline}</dd><dt>Source</dt><dd>{j.sourceType}</dd><dt>Location</dt><dd>{j.location}</dd></dl>
-      {closed?<a className="primary" href="/#jobs">Find other jobs ↗</a>:<a className="primary" href={j.url} target="_blank" rel="noopener noreferrer">Apply ↗</a>}
-      {!closed&&!preview&&<a className="secondary resume-job-link" href={'/resume?job='+encodeURIComponent(j.id)}>Tailor resume for this job ↗</a>}
+      {closed?<a className="primary" href="/#jobs">Find other jobs ↗</a>:<a className="primary" data-analytics-event={preview?undefined:"apply_click"} data-job-id={j.id} href={j.url} target="_blank" rel="noopener noreferrer">Apply ↗</a>}
+      {!closed&&!preview&&<a className="secondary resume-job-link" data-analytics-event="resume_tool_click" data-job-id={j.id} href={'/resume?job='+encodeURIComponent(j.id)}>Tailor resume for this job ↗</a>}
       <small>Application details may change. We do not collect applications or guarantee placement.</small>
       {preview&&<a className="secondary" style={{display:'block',marginTop:18,textAlign:'center'}} href="/admin">Return to dashboard</a>}
     </aside></div>
-    <div className="mobile-apply"><a className="primary" href={closed?'/#jobs':j.url} target={closed?undefined:'_blank'} rel={closed?undefined:'noopener noreferrer'}>{closed?'Browse open jobs ↗':'Apply ↗'}</a></div>
+    <div className="mobile-apply"><a className="primary" data-analytics-event={closed||preview?undefined:'apply_click'} data-job-id={j.id} href={closed?'/#jobs':j.url} target={closed?undefined:'_blank'} rel={closed?undefined:'noopener noreferrer'}>{closed?'Browse open jobs ↗':'Apply ↗'}</a></div>
   </>;
 }

@@ -1,4 +1,5 @@
 import {careerPriority} from './job-priority.ts';
+import {campaignLink} from './traffic-links.ts';
 import {collectionSources,sourceIndex,readSource,canonicalJobUrl,indiaToday} from './collection-sources.ts';
 
 export type SocialEnv={DB:D1Database;REEL_MEDIA?:KVNamespace;SITE_URL:string;JOBVEYLO_AUTOMATION_KEY?:string;INSTAGRAM_ACCESS_TOKEN?:string;INSTAGRAM_ACCOUNT_ID?:string};
@@ -66,7 +67,7 @@ export function reelHashtags(job:any){
 export function reelCaption(job:any,origin:string){
  const salary=String(job.salary||'').trim();
  const pay=salary&&!/^(?:not\b|n\/?a\b|tbd\b|unknown\b|undisclosed\b|competitive\b|negotiable\b|see\b)/i.test(salary)?'\n💰 Salary: '+salary.slice(0,150):'';
- return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}${pay}\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\n🔗 Job details + resume tool:\n${origin}/jobs/${job.id}\n\nOpen “Tailor resume for this job” on the job page.\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
+ return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}${pay}\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\n🔗 Job details + resume tool:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nOpen “Tailor resume for this job” on the job page.\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
 }
 async function activeEmployer(job:any,fetcher:typeof fetch){
  const source=collectionSources.find(s=>s.company===job.company&&['ashby','lever','greenhouse'].includes(s.kind));
