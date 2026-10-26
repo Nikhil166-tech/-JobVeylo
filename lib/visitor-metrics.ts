@@ -1,6 +1,6 @@
 export const metricEvents=['page_view','apply_click','resume_tool_click'] as const;
 export const metricSources=['direct','instagram','whatsapp','google','bing','linkedin','facebook','share','referral','internal','other'] as const;
-export const metricCampaigns=['none','bio','channel','job_reel','job_share','setup_test'] as const;
+export const metricCampaigns=['none','bio','channel','job_reel','job_post','job_share','setup_test'] as const;
 const pages=new Set(['/','/resume','/about','/contact','/privacy','/editorial','/disclaimer','/alerts']);
 export function publicAnalyticsPath(path:string){return pages.has(path)||/^\/jobs\/[a-zA-Z0-9_-]{1,180}$/.test(path)||/^\/guides\/[a-zA-Z0-9_-]{1,100}$/.test(path)}
 export function trafficSource(tag:string|null,referrer:string,origin:string){

@@ -69,7 +69,7 @@ export function reelCaption(job:any,origin:string){
  const pay=salary&&!/^(?:not\b|n\/?a\b|tbd\b|unknown\b|undisclosed\b|competitive\b|negotiable\b|see\b)/i.test(salary)?'\n💰 Salary: '+salary.slice(0,150):'';
  return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}${pay}\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\n🔗 Job details + resume tool:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nOpen “Tailor resume for this job” on the job page.\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
 }
-async function activeEmployer(job:any,fetcher:typeof fetch){
+export async function activeEmployer(job:any,fetcher:typeof fetch){
  const source=collectionSources.find(s=>s.company===job.company&&['ashby','lever','greenhouse'].includes(s.kind));
  if(!source)return false;
  const index=sourceIndex(source,await readSource(source.url,fetcher));

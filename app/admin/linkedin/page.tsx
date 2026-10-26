@@ -1,0 +1,13 @@
+import {requireEditor} from '../../../lib/editor-auth';
+import {bindings} from '../../../lib/platform';
+import {Header,Footer} from '../../../components/site-shell';
+import LinkedInControls from '../../../components/linkedin-controls';
+export const dynamic='force-dynamic';
+export const metadata={title:'LinkedIn automation | JobVeylo',robots:{index:false,follow:false}};
+export default async function LinkedInSetup(){
+ await requireEditor();const {DB}=bindings();
+ const control=await DB.prepare('SELECT enabled,channel_name FROM linkedin_control WHERE id=1').first<{enabled:number;channel_name:string|null}>();
+ const counts=await DB.prepare('SELECT status,COUNT(*) AS n FROM linkedin_jobs GROUP BY status').all<{status:string;n:number}>();
+ const recent=await DB.prepare('SELECT listing_id,status,last_error,due_at FROM linkedin_jobs ORDER BY COALESCE(due_at,created_at) DESC LIMIT 12').all<{listing_id:string;status:string;last_error:string|null;due_at:string|null}>();
+ return <><Header/><main><div className="page-head"><div className="wrap"><a className="breadcrumb" href="/admin">Owner dashboard /</a><h1>LinkedIn publishing</h1><p className="sub">One opening every 30 minutes, with freshers and roles accepting 0–3 years first.</p></div></div><article className="article"><h2>{control?.enabled?'Automatic posting enabled':'Automatic posting paused'}</h2><p>Profile: {control?.channel_name||'Connection not verified'}. Cloudflare sends a source-verified opening to Buffer for delivery two minutes after each processing slot. It runs while your computer is off. Buffer and LinkedIn can delay or reject delivery.</p><LinkedInControls/><p>The Buffer key created on 26 October 2026 expires on 25 November 2026. Renew it privately as BUFFER_API_KEY on jobveylo-collector before expiry. Revoked access also requires reconnection.</p><p>Scheduled means Buffer accepted the post. Sent means Buffer confirmed delivery; statuses are checked hourly. Uncertain outcomes are held without automatic duplicate retries. Pausing does not cancel posts already queued in Buffer.</p><p><a href="https://publish.buffer.com/channels/6adf25f32f1f5ed648d70265/schedule" target="_blank" rel="noopener noreferrer">Open LinkedIn queue in Buffer ↗</a></p><p>This connection publishes to the selected personal profile. Buffer does not support LinkedIn groups.</p><h2>Queue</h2><ul>{counts.results.map(row=><li key={row.status}>{row.status}: {row.n}</li>)}</ul><h2>Recent outcomes</h2>{recent.results.map(row=><p key={row.listing_id}><a href={'/jobs/'+row.listing_id}>{row.listing_id}</a> — {row.status}{row.due_at?' · '+new Date(row.due_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST':''}{row.last_error?' · '+row.last_error:''}</p>)}</article></main><Footer/></>;
+}

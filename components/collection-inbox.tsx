@@ -8,7 +8,7 @@ export default function CollectionInbox({onImport,canReplace}:{onImport:(job:any
  return <section className="collection-panel">
   <div className="section-top"><div><div className="eyebrow">AUTOMATIC JOB PUBLISHING</div><h2>Publishing queue</h2></div><button className="secondary" disabled={busy} onClick={refresh}>Refresh queue</button></div>
   <p>Freshers and roles accepting 0–3 years go first, followed by other openings. The scheduler publishes at most one verified job every 30 minutes. Individual approval is no longer required. Incomplete, expired and conflicting records stay unpublished.</p>
-  <p><a href="/admin/instagram">Instagram connection and reel status →</a> · <a href="/admin/whatsapp">WhatsApp setup →</a> · <a href="/admin/analytics">Visitor analytics →</a></p><p role="status">{message}</p>
+  <p><a href="/admin/instagram">Instagram connection and reel status →</a> · <a href="/admin/linkedin">LinkedIn publishing →</a> · <a href="/admin/whatsapp">WhatsApp setup →</a> · <a href="/admin/analytics">Visitor analytics →</a></p><p role="status">{message}</p>
   {data&&<>
    <div className="actions"><span className="tag">{data.publishing?.enabled?'Automatic publishing enabled':'Automatic publishing paused'}</span><button className="secondary" disabled={busy} onClick={()=>act('publishing',{enabled:!data.publishing?.enabled})}>{data.publishing?.enabled?'Pause automatic publishing':'Enable automatic publishing'}</button></div>
    <p className="sub">Website slots: :00 and :30 each hour. Instagram uses its own two-per-hour queue once its connection and hosted renderer are ready. Processing can delay a reel; missed slots do not cause a burst of posts.</p>
