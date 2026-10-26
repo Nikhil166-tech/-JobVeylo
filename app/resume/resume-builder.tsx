@@ -20,7 +20,7 @@ export default function ResumeBuilder(){
   const text=mode==='form'?formResume(fields):source;
   const job=jobs.find(j=>j.id===jobId);
   useEffect(()=>{if(initialJob.current||!jobs.length)return;initialJob.current=true;const id=new URLSearchParams(location.search).get('job');if(id&&jobs.some(j=>j.id===id))goStep(2)},[jobs]);
-  const matchingJobs=jobs.filter(j=>(j.company+' '+j.title+' '+j.location).toLowerCase().includes(jobSearch.toLowerCase().trim()));
+  const matchingJobs=jobs.filter(j=>jobSearch.toLowerCase().trim().split(/\s+/).every(term=>(j.company+' '+j.title+' '+j.location).toLowerCase().includes(term)));
   const finalDraft=draft?normalizeProjectDraft(draft):null;
   function invalidateDraft(){setDraft(null);setDraftTarget(null);setReviewed(false);setAi(false);setError('')}
   function extractPasted(){const result=extractResumeContact(source);setContact({...blankContact(),...result.contact});setSource(result.bodyText);setImportWarnings(result.warnings);setImportMessage('Contact details extracted on your device. Review the fields below.');invalidateDraft()}
