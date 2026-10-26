@@ -4,6 +4,7 @@ export const metricCampaigns=['none','bio','channel','job_reel','job_post','job_
 const pages=new Set(['/','/resume','/about','/contact','/privacy','/editorial','/disclaimer','/alerts']);
 export function publicAnalyticsPath(path:string){return pages.has(path)||/^\/jobs\/[a-zA-Z0-9_-]{1,180}$/.test(path)||/^\/guides\/[a-zA-Z0-9_-]{1,100}$/.test(path)}
 export function trafficSource(tag:string|null,referrer:string,origin:string){
+ if(tag?.toLowerCase()==='ig')return 'instagram';
  if(tag&&metricSources.includes(tag.toLowerCase() as typeof metricSources[number]))return tag.toLowerCase();
  if(!referrer)return 'direct';
  try{const url=new URL(referrer);if(url.origin===origin)return 'internal';const host=url.hostname.toLowerCase();

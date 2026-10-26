@@ -1,6 +1,7 @@
 import {careerPriority} from './job-priority.ts';
 import {campaignLink} from './traffic-links.ts';
 import {collectionSources,sourceIndex,readSource,canonicalJobUrl,indiaToday} from './collection-sources.ts';
+import {experiment,reelWindow,prepareReelTest,experienceHook,eligibleReel} from './reel-experiment.ts';
 
 export type SocialEnv={DB:D1Database;REEL_MEDIA?:KVNamespace;SITE_URL:string;JOBVEYLO_AUTOMATION_KEY?:string;INSTAGRAM_ACCESS_TOKEN?:string;INSTAGRAM_ACCOUNT_ID?:string};
 export function instagramReady(env:SocialEnv){return !!env.REEL_MEDIA&&!!env.INSTAGRAM_ACCESS_TOKEN&&/^\d+$/.test(env.INSTAGRAM_ACCOUNT_ID||'')}
@@ -39,8 +40,10 @@ export async function seedSocialQueue(db:D1Database){
 export async function claimReel(db:D1Database,now=Date.now()){
  const control=await db.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>();
  if(!control?.instagram_enabled)return null;
+ const test=await experiment(db);
+ if(test){if(!test.enabled||now<test.starts_at||now>=test.ends_at)return null;await prepareReelTest(db,test,now)}
  await db.prepare("UPDATE social_jobs SET status='waiting_media',lease_until=0 WHERE status='rendering' AND lease_until<?").bind(now).run();
- const row=await db.prepare("UPDATE social_jobs SET status='rendering',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='waiting_media' AND l.status='published' ORDER BY s.priority,s.created_at LIMIT 1) AND status='waiting_media' RETURNING listing_id").bind(now+15*60000).first<{listing_id:string}>();
+ const row=await db.prepare("UPDATE social_jobs SET status='rendering',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='waiting_media' AND l.status='published' ORDER BY CASE WHEN json_extract(l.data,'$.region')='India' THEN 0 ELSE 1 END,s.priority,s.created_at LIMIT 1) AND status='waiting_media' RETURNING listing_id").bind(now+15*60000).first<{listing_id:string}>();
  if(!row)return null;
  const listing=await db.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();
  if(!listing)return null;
@@ -48,7 +51,8 @@ export async function claimReel(db:D1Database,now=Date.now()){
  if(job.deadline!=='Not specified'&&job.deadline<indiaToday()){
   await db.prepare("UPDATE social_jobs SET status='held',last_error='The application deadline has passed.' WHERE listing_id=?").bind(row.listing_id).run();return null;
  }
- return {...job,id:row.listing_id,career:careerPriority(job).label};
+ const design=test?await db.prepare('SELECT variant,version FROM reel_test_jobs WHERE listing_id=?').bind(row.listing_id).first<{variant:string;version:string}>():null;
+ return {...job,id:row.listing_id,career:careerPriority(job).label,...(design?{variant:design.variant,designVersion:design.version,hook:experienceHook(job)}:{})};
 }
 export function reelHashtags(job:any){
  const title=String(job.title||'');
@@ -67,7 +71,8 @@ export function reelHashtags(job:any){
 export function reelCaption(job:any,origin:string){
  const salary=String(job.salary||'').trim();
  const pay=salary&&!/^(?:not\b|n\/?a\b|tbd\b|unknown\b|undisclosed\b|competitive\b|negotiable\b|see\b)/i.test(salary)?'\n💰 Salary: '+salary.slice(0,150):'';
- return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}\n🎓 ${String(job.education).slice(0,160)}${pay}\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\n🔗 Job details + resume tool:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nOpen “Tailor resume for this job” on the job page.\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
+ const education=String(job.education||'');const qualification=education&&!/^(?:not\b|no explicit\b|see\b|unknown\b|n\/?a\b)/i.test(education)?'\n🎓 '+education.slice(0,160):'';
+ return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}${qualification}${pay}\n\n🔗 Apply: open the link in @jobveylo’s bio.\nSearch “${job.company} ${job.title}”.\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\nJob details:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
 }
 export async function activeEmployer(job:any,fetcher:typeof fetch){
  const source=collectionSources.find(s=>s.company===job.company&&['ashby','lever','greenhouse'].includes(s.kind));
@@ -80,6 +85,8 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  const now=options.now??Date.now(),fetcher=options.fetcher||fetch;
  const control=await env.DB.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>();
  if(!control?.instagram_enabled)return {state:'paused'};
+ const test=await experiment(env.DB);
+ if(test){if(!test.enabled||now<test.starts_at||now>=test.ends_at)return {state:'test_complete'};await prepareReelTest(env.DB,test,now);if(!reelWindow(now))return {state:'outside_test_window'}}
  // A terminated request may have reached Meta. Hold it for reconciliation instead of retrying or blocking the entire queue.
  await env.DB.prepare("UPDATE social_jobs SET status='held',last_error='Interrupted Instagram request; reconcile before retrying.',lease_until=0 WHERE status IN ('creating','publishing') AND lease_until<?").bind(now).run();
  const token=instagramToken(env),account=env.INSTAGRAM_ACCOUNT_ID!;
@@ -94,6 +101,10 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
   try{
    const state=await graph(processing.container_id+'?fields=status_code');
    if(state.status_code==='FINISHED'){
+    if(test){
+     const planned=await env.DB.prepare('SELECT publish_slot FROM reel_test_jobs WHERE listing_id=?').bind(processing.listing_id).first<{publish_slot:number}>();
+     if(planned?.publish_slot!==reelWindow(now)?.slot){await env.DB.prepare("UPDATE social_jobs SET status='held',lease_until=0,last_error='Missed experiment publishing window; no catch-up post.' WHERE listing_id=?").bind(processing.listing_id).run();return {state:'missed_test_window'}}
+    }
     const latest=await env.DB.prepare("SELECT MAX(published_at) AS latest FROM social_jobs WHERE status='published'").first<{latest:string|null}>();
     if(latest?.latest&&now-Date.parse(latest.latest)<1800000){await env.DB.prepare('UPDATE social_jobs SET lease_until=0 WHERE listing_id=?').bind(processing.listing_id).run();return {state:'spacing_guard'}}
     const allowed=await env.DB.prepare("UPDATE social_jobs SET status='publishing' WHERE listing_id=? AND status='processing' RETURNING listing_id").bind(processing.listing_id).first();
@@ -115,17 +126,19 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  if(inFlight)return {state:'processing'};
  const ready=await env.DB.prepare("SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='media_ready' AND l.status='published' LIMIT 1").first();
  if(!ready)return {state:'waiting_for_media'};
- const slot=Math.floor(now/1800000);
+ const slot=test?reelWindow(now)!.slot:Math.floor(now/1800000);
  const reserved=await env.DB.prepare("INSERT INTO instagram_slots(slot,status,created_at) VALUES(?,'checking',?) ON CONFLICT DO NOTHING RETURNING slot").bind(slot,new Date(now).toISOString()).first();
  if(!reserved)return {state:'already_checked'};
- const row=await env.DB.prepare("UPDATE social_jobs SET status='creating',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='media_ready' AND l.status='published' ORDER BY s.priority,s.created_at LIMIT 1) AND status='media_ready' RETURNING listing_id,media_key,media_created_at").bind(now+120000).first<{listing_id:string;media_key:string;media_created_at:string}>();
+ const row=await env.DB.prepare("UPDATE social_jobs SET status='creating',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='media_ready' AND l.status='published' ORDER BY CASE WHEN json_extract(l.data,'$.region')='India' THEN 0 ELSE 1 END,s.priority,s.created_at LIMIT 1) AND status='media_ready' RETURNING listing_id,media_key,media_created_at").bind(now+120000).first<{listing_id:string;media_key:string;media_created_at:string}>();
  if(!row)return {state:'waiting_for_media'};
+ if(test)await env.DB.prepare('UPDATE reel_test_jobs SET publish_slot=? WHERE listing_id=?').bind(slot,row.listing_id).run();
  let stage='profile authentication';
  try{
   const profile=await graph(account+'?fields=id,username');if(String(profile.username).toLowerCase()!=='jobveylo')throw Error('Connected Instagram account is not JobVeylo');
   stage='source verification';
   const stored=await env.DB.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();if(!stored)throw Error('Listing is unavailable');
   const job={...JSON.parse(stored.data),id:row.listing_id};
+  if(test&&!eligibleReel(job))throw Error('Listing no longer meets the experiment audience');
   if((job.deadline!=='Not specified'&&job.deadline<indiaToday())||!await activeEmployer(job,fetcher))throw Error('Employer opening could not be reverified');
   if(!row.media_created_at||now-Date.parse(row.media_created_at)>6*86400000)throw Error('Reel media has expired');
   stage='media creation';

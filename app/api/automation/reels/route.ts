@@ -21,5 +21,6 @@ export async function PUT(request:Request){
  if(total<1000||new TextDecoder().decode(bytes.slice(4,8))!=='ftyp')return new Response('An MP4 is required',{status:400,headers});
  const key='reels/'+id+'.mp4';await env.REEL_MEDIA.put(key,bytes,{expirationTtl:7*86400});
  await env.DB.prepare("UPDATE social_jobs SET status='media_ready',media_key=?,media_created_at=?,lease_until=0,last_error=NULL WHERE listing_id=? AND status='rendering'").bind(key,new Date().toISOString(),id).run();
+ await env.DB.prepare('UPDATE reel_test_jobs SET rendered_at=? WHERE listing_id=?').bind(Date.now(),id).run();
  return Response.json({ready:true},{headers});
 }

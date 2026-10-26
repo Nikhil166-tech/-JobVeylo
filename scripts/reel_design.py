@@ -94,47 +94,62 @@ def icon(draw, kind, x, y):
         draw.line((x + 53, y + 34, x + 60, y + 34), fill=ink, width=4)
 
 
+def short_salary(value):
+    value = ' '.join(str(value or '').split())
+    match = re.fullmatch(r'INR\s+(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)\s*/\s*(?:1\s*)?YEAR', value, re.I)
+    if match:
+        return f'₹{float(match[1])/100000:g}–{float(match[2])/100000:g} lakh/year'
+    return value
+
+
+def known_education(value):
+    return bool(value) and not re.match(r'^(not\b|no explicit\b|see\b|unknown\b|n/?a\b)', str(value), re.I)
+
+
 def poster(job):
+    """Two single-page hierarchies; duration, audio, colors and facts stay the same."""
     image = Image.new('RGB', (W, H), NAVY)
-    glow = Image.new('RGBA', (W, H))
-    glow_draw = ImageDraw.Draw(glow)
-    glow_draw.ellipse((825, -340, 1420, 310), fill=(42, 91, 230, 125))
-    glow_draw.ellipse((-280, 1660, 270, 2200), fill=(37, 73, 220, 95))
-    image = Image.alpha_composite(image.convert('RGBA'), glow.filter(ImageFilter.GaussianBlur(65))).convert('RGB')
     draw, records = ImageDraw.Draw(image), []
-    brand = font(50, True)
-    draw.text((88, 140), 'Job', font=brand, fill=WHITE, anchor='lt')
-    draw.text((88 + draw.textlength('Job', font=brand), 140), 'Veylo', font=brand, fill=LIME, anchor='lt')
-    draw.rounded_rectangle((650, 137, 932, 187), 25, fill='#13284C')
-    fit(draw, 'DESIGN PREVIEW' if job.get('_preview') else 'JOB OPENING', (666, 151, 916, 181), size=23, minimum=20, align='center', color=MUTED)
-    fit(draw, 'HIRING AT', (90, 254, 925, 291), size=25, minimum=25, color=MUTED)
-    fit(draw, str(job.get('company', '')).upper(), (88, 300, 932, 410), size=62, minimum=32, bold=True, records=records, name='company')
-    fit(draw, job.get('title', ''), (88, 430, 932, 665), size=100, minimum=42, bold=True, color=LIME, records=records, name='title')
-    facts = [('Location', job.get('location') or 'See employer notice'),
-             ('Experience', job.get('experience') or 'Not specified by employer'),
-             ('Qualification', job.get('education') or 'Not specified by employer')]
-    if disclosed_pay(job.get('salary')):
-        facts.append(('Salary', job['salary']))
-    stride = 480 // len(facts)
-    for index, (label, value) in enumerate(facts):
-        top = 690 + stride * index
-        draw.rounded_rectangle((88, top, 932, top + stride - 10), 18, fill='#102342', outline='#20375A', width=2)
-        icon(draw, label, 116, top + (stride - 80) // 2)
-        fit(draw, label, (210, top + 10, 903, top + 38), size=23, minimum=23, color=MUTED)
-        fit(draw, value, (210, top + 43, 903, top + stride - 14), size=37, minimum=26, bold=True, records=records, name=label.lower())
-    draw.rounded_rectangle((88, 1190, 932, 1470), 30, fill=LIME)
-    # Outline resume icon, without scores, seals or guarantees.
-    draw.line([(122, 1247), (122, 1385), (196, 1385), (196, 1276), (169, 1247), (122, 1247)], fill=NAVY, width=6)
-    draw.line([(169, 1247), (169, 1276), (196, 1276)], fill=NAVY, width=5)
-    for yy in [1300, 1320, 1340, 1360]:
-        draw.line((138, yy, 179, yy), fill=NAVY, width=4)
-    fit(draw, 'TAILOR YOUR\nATS-FRIENDLY RESUME\nFOR THIS JOB', (232, 1220, 901, 1412), size=44, minimum=36, bold=True, color=NAVY, records=records, name='resume_service')
-    fit(draw, 'Upload → tailor → review & download', (116, 1423, 904, 1460), size=28, minimum=25, color=NAVY, align='center')
-    draw.rounded_rectangle((88, 1523, 932, 1607), 42, fill='#294AFF')
-    fit(draw, 'VIEW JOB + TAILOR RESUME', (112, 1545, 906, 1593), size=37, minimum=29, bold=True, align='center', records=records, name='call_to_action')
-    fit(draw, 'Link in bio · @jobveylo', (88, 1635, 932, 1675), size=29, minimum=26, align='center')
-    fit(draw, 'jobveylo.jobveylo.workers.dev', (88, 1700, 932, 1732), size=23, minimum=21, color=MUTED, align='center')
-    fit(draw, 'Sample job details · design preview' if job.get('_preview') else 'Check full eligibility on JobVeylo', (88, 1752, 932, 1783), size=21, minimum=20, color=MUTED, align='center')
+    variant = 'B' if job.get('variant') == 'B' else 'A'
+    fit(draw, 'JobVeylo', (90, 135, 930, 195), size=48, minimum=48, bold=True, color=LIME)
+    fit(draw, 'SAMPLE · DESIGN PREVIEW' if job.get('_preview') else 'VERIFIED JOB OPENING', (90, 216, 930, 254), size=25, minimum=25, color=MUTED)
+    location = str(job.get('location') or 'Check employer location')
+    hook = str(job.get('hook') or ('INTERNSHIP' if re.search(r'\bintern(?:ship)?\b', str(job.get('title', '')), re.I) else job.get('experience') or 'Check experience in notice'))
+    company, title = str(job.get('company', '')), str(job.get('title', ''))
+    # Location already has its own large row; avoid repeating it in the title.
+    for place in ['Bangalore, India', 'Bengaluru, India']:
+        if place.split(',')[0].lower().replace('bangalore','bengaluru') in location.lower().replace('bangalore','bengaluru') or 'India' == location:
+            title = title.replace(' (' + place + ')', '')
+    if variant == 'A':
+        draw.rounded_rectangle((88, 290, 932, 425), 22, fill=LIME)
+        fit(draw, hook.upper(), (115, 315, 905, 405), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
+        fit(draw, company.upper(), (90, 460, 930, 540), size=53, minimum=38, bold=True, records=records, name='company')
+        fit(draw, title, (90, 570, 930, 785), size=80, minimum=44, bold=True, records=records, name='title')
+    else:
+        fit(draw, company.upper(), (90, 290, 930, 370), size=53, minimum=38, bold=True, records=records, name='company')
+        fit(draw, title, (90, 395, 930, 610), size=80, minimum=44, bold=True, records=records, name='title')
+        draw.rounded_rectangle((88, 650, 932, 785), 22, fill=LIME)
+        fit(draw, hook.upper(), (115, 675, 905, 765), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
+    draw.rounded_rectangle((88, 820, 932, 1010), 22, fill='#102342')
+    fit(draw, 'LOCATION / ELIGIBILITY', (115, 840, 905, 875), size=25, minimum=25, color=MUTED)
+    fit(draw, location, (115, 890, 905, 990), size=43, minimum=32, bold=True, records=records, name='location')
+    salary = short_salary(job.get('salary'))
+    education = str(job.get('education') or '')
+    facts = []
+    if disclosed_pay(salary):
+        facts.append(salary)
+    if known_education(education):
+        facts.append(education)
+    if facts:
+        fit(draw, '\n'.join(facts), (90, 1050, 930, 1245), size=39, minimum=32, records=records, name='facts')
+    else:
+        fit(draw, 'Read the employer’s full eligibility before applying.', (90, 1060, 930, 1195), size=36, minimum=32, color=MUTED)
+    draw.rounded_rectangle((88, 1290, 932, 1420), 22, fill='#102342', outline='#294AFF', width=3)
+    fit(draw, 'Tailor your ATS-friendly resume\nfor this job on JobVeylo', (115, 1315, 905, 1400), size=34, minimum=30, records=records, name='resume_service')
+    draw.rounded_rectangle((88, 1480, 932, 1595), 30, fill=LIME)
+    fit(draw, 'APPLY · LINK IN BIO', (115, 1515, 905, 1575), size=46, minimum=36, bold=True, color=NAVY, align='center', records=records, name='call_to_action')
+    fit(draw, 'Search: ' + company + ' · ' + title, (90, 1630, 930, 1740), size=29, minimum=26, align='center', color=WHITE, records=records, name='search_hint')
+    fit(draw, '@jobveylo · Check full eligibility', (90, 1770, 930, 1815), size=26, minimum=24, align='center', color=MUTED)
     return image, records
 
 
@@ -178,7 +193,7 @@ def render(job, target, work):
                 image = base.copy()
                 # Only a fine accent pulses; all job and resume details remain visible.
                 strength = int(110 + 80 * (1 + math.sin(2 * math.pi * frame / FPS / 2)) / 2)
-                ImageDraw.Draw(image).rounded_rectangle((88, 1523, 932, 1607), 42, outline=(strength, 210, 150), width=2)
+                ImageDraw.Draw(image).rounded_rectangle((88, 1480, 932, 1595), 30, outline=(strength, 210, 150), width=2)
                 process.stdin.write(image.tobytes())
             process.stdin.close()
             result = process.wait()

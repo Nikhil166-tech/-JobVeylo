@@ -8,7 +8,7 @@ import {makeCollectedJob,collectionSources} from '../lib/collection-sources.ts';
 import {runAutomaticPublishing,locationConflict,expiredDeadline} from '../lib/automatic-publishing.ts';
 import {claimReel,automationAuthorized,runInstagramPublishing,checkInstagramConnection,reelHashtags,reelCaption} from '../lib/instagram-publishing.ts';
 function database(){
- const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql','0005_renderer_dispatch.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
+ const sqlite=new DatabaseSync(':memory:');for(const name of ['0001_initial.sql','0002_collection.sql','0004_automatic_publishing.sql','0005_renderer_dispatch.sql','0008_reel_experiment.sql'])sqlite.exec(readFileSync('cloudflare/migrations/'+name,'utf8'));
  for(const source of collectionSources)sqlite.prepare('INSERT INTO collection_sources(id) VALUES(?)').run(source.id);
  const db={prepare(sql){let values=[];const q={bind(...args){values=args;return q},async first(){return sqlite.prepare(sql).get(...values)||null},async all(){return {results:sqlite.prepare(sql).all(...values),success:true}},async run(){const r=sqlite.prepare(sql).run(...values);return {success:true,meta:{changes:Number(r.changes)}}}};return q},async batch(queries){sqlite.exec('BEGIN');try{const results=[];for(const q of queries)results.push(await q.run());sqlite.exec('COMMIT');return results}catch(error){sqlite.exec('ROLLBACK');throw error}}};return {db,sqlite};
 }

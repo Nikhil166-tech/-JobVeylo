@@ -1,3 +1,4 @@
+import {experiment,reelWindow,prepareReelTest} from './reel-experiment.ts';
 export type RendererEnv={DB:D1Database;GITHUB_RENDER_TOKEN?:string};
 const endpoint='https://api.github.com/repos/Nikhil166-tech/-JobVeylo/actions/workflows/render-job-reel.yml/dispatches';
 export async function rendererStatus(env:RendererEnv){
@@ -10,6 +11,8 @@ export async function dispatchRenderer(env:RendererEnv,options:{now?:number;fetc
  const control=await env.DB.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>();
  if(!control?.instagram_enabled)return {state:'paused',message:'Instagram publishing is paused.'};
  const now=options.now??Date.now(),slot=Math.floor(now/1800000),time=new Date(now).toISOString();
+ const test=await experiment(env.DB);
+ if(test){if(!test.enabled||now<test.starts_at||now>=test.ends_at)return {state:'test_complete'};await prepareReelTest(env.DB,test,now);if(!reelWindow(now,true))return {state:'outside_test_window'}}
  await env.DB.prepare("UPDATE social_jobs SET status='waiting_media',lease_until=0 WHERE status='rendering' AND lease_until<?").bind(now).run();
  const waiting=await env.DB.prepare("SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='waiting_media' AND l.status='published' LIMIT 1").first();
  if(!waiting)return {state:'empty',message:'No public reel job is waiting.'};

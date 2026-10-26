@@ -4,6 +4,7 @@ import {runAutomaticPublishing} from '../lib/automatic-publishing';
 import {runInstagramPublishing,checkInstagramConnection,type SocialEnv} from '../lib/instagram-publishing';
 import {dispatchRenderer,rendererStatus,type RendererEnv} from '../lib/renderer-dispatch';
 import {checkLinkedInConnection,runLinkedInPublishing,type LinkedInEnv} from '../lib/linkedin-publishing';
+import {collectReelTestInsights,checkReelInsightsAccess} from '../lib/reel-experiment';
 type Env=SocialEnv&RendererEnv&LinkedInEnv&{SELF:Fetcher};
 async function dispatch(env:Env){
  const results=[];
@@ -15,6 +16,7 @@ async function dispatch(env:Env){
  try{const response=await env.SELF.fetch('https://collector/render',{method:'POST'});results.push({renderer:response.ok?await response.json():{state:'failed'}})}catch{results.push({renderer:{state:'failed'}})}
  try{const response=await env.SELF.fetch('https://collector/instagram',{method:'POST'});results.push({instagram:response.ok?await response.json():{state:'failed'}})}catch{results.push({instagram:{state:'failed'}})}
  try{const response=await env.SELF.fetch('https://collector/linkedin',{method:'POST'});results.push({linkedin:response.ok?await response.json():{state:'failed'}})}catch{results.push({linkedin:{state:'failed'}})}
+ try{await env.SELF.fetch('https://collector/reel-insights',{method:'POST'})}catch{/* A read-only metrics failure cannot block publishing. */}
  return {results};
 }
 export default {
@@ -32,6 +34,8 @@ export default {
   if(path==='/instagram-check')return Response.json(await checkInstagramConnection(env));
   if(path==='/linkedin')return Response.json(await runLinkedInPublishing(env));
   if(path==='/linkedin-check')return Response.json(await checkLinkedInConnection(env));
+  if(path==='/reel-insights')return Response.json(await collectReelTestInsights(env));
+  if(path==='/reel-insights-check')return Response.json(await checkReelInsightsAccess(env));
   if(path==='/render')return Response.json(await dispatchRenderer(env));
   if(path==='/renderer-status')return Response.json(await rendererStatus(env));
   const sourceId=path.replace(/^\/source\//,'');

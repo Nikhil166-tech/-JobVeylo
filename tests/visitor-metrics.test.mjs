@@ -6,6 +6,7 @@ test('metrics exclude private routes, queries and arbitrary fields',()=>{
  for(const bad of [{path:'/admin'},{source:'someone@example.com'},{campaign:'private text'},{email:'private@example.com'}])assert.equal(validMetric({path:'/resume',event:'page_view',source:'direct',campaign:'none',...bad}),false);
 });
 test('attribution strips private referrer details and respects tagged app links',()=>{
+ assert.equal(trafficSource('ig','','https://jobveylo.test'),'instagram');
  assert.equal(trafficSource('whatsapp','','https://jobveylo.test'),'whatsapp');assert.equal(trafficSource(null,'https://l.instagram.com/path?private=yes','https://jobveylo.test'),'instagram');assert.equal(trafficSource(null,'https://jobveylo.test/jobs/example','https://jobveylo.test'),'internal');assert.equal(trafficSource(null,'https://google.com.evil.test/private','https://jobveylo.test'),'referral');
 });
 test('daily counters aggregate instead of saving individual visitor records',()=>{
