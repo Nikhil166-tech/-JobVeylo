@@ -85,15 +85,15 @@
       ],
       [
         "Analytics and advertising",
-        "JobVeylo has no active advertising network. Optional Google Analytics is described below and loads only after you allow it using Privacy choices."
+        "JobVeylo has no active advertising network. Public-page usage is counted automatically using aggregate counters described below. The Google Analytics script is no longer loaded."
       ],
       [
         "Your choices",
         "You can clear local saved jobs and older drafts below or through your browser settings. Clearing local storage does not remove listings stored in the owner dashboard. Contact us with privacy questions or requests about information you have sent us."
       ],
       [
-        "Optional visitor analytics",
-        "With your permission, Google Analytics measures public page visits, approximate unique users, traffic sources, Apply clicks and resume-tool clicks. It uses analytics cookies and processes technical information such as device/browser details and approximate location. Counts are estimates and exclude visitors who decline or block analytics. Advertising personalization and Google signals are disabled. We do not send resume text, form values, names, email addresses or phone numbers as analytics events. Admin and authentication pages are excluded. Shared links contain campaign tags to identify their source. Use Privacy choices to allow or decline analytics at any time. Your choice is stored in this browser. Google handles data under its privacy policy at https://policies.google.com/privacy."
+        "Aggregate visitor analytics",
+        "JobVeylo automatically counts public page views, fixed traffic-source and campaign labels, Apply clicks and resume-tool clicks in daily aggregates stored in Cloudflare D1. This analytics system does not use cookies, browser storage, visitor identifiers or fingerprinting, and does not store IP addresses, full referrer URLs, query strings, resume content or contact fields. It does not count unique people. Admin and authentication pages are excluded. Browsers, blocking tools and automated traffic can affect counts. Counts are visible only to the owner. Hosting providers still process connection information to deliver and secure the website. Earlier Google Analytics data remains subject to Google privacy policies; new visits are not sent to Google Analytics."
       ]
     ]
   },
