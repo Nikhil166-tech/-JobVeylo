@@ -5,6 +5,7 @@ import {runInstagramPublishing,checkInstagramConnection,type SocialEnv} from '..
 import {dispatchRenderer,rendererStatus,type RendererEnv} from '../lib/renderer-dispatch';
 import {checkLinkedInConnection,runLinkedInPublishing,type LinkedInEnv} from '../lib/linkedin-publishing';
 import {collectReelTestInsights,checkReelInsightsAccess} from '../lib/reel-experiment';
+import {reconcileInstagram} from '../lib/instagram-reconciliation';
 type Env=SocialEnv&RendererEnv&LinkedInEnv&{SELF:Fetcher};
 async function dispatch(env:Env){
  const results=[];
@@ -32,6 +33,7 @@ export default {
   if(path==='/instagram')return Response.json(await runInstagramPublishing(env,{startNew:true}));
   if(path==='/instagram-poll')return Response.json(await runInstagramPublishing(env,{startNew:true}));
   if(path==='/instagram-check')return Response.json(await checkInstagramConnection(env));
+  if(path==='/instagram-reconcile')return Response.json(await reconcileInstagram(env));
   if(path==='/linkedin')return Response.json(await runLinkedInPublishing(env));
   if(path==='/linkedin-check')return Response.json(await checkLinkedInConnection(env));
   if(path==='/reel-insights')return Response.json(await collectReelTestInsights(env));

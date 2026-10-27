@@ -4,7 +4,16 @@ import {indiaToday} from './collection-sources.ts';
 import {campaignLink} from './traffic-links.ts';
 
 export type LinkedInEnv={DB:D1Database;SITE_URL:string;BUFFER_API_KEY?:string;BUFFER_CHANNEL_ID?:string};
-type Control={enabled:number;organization_id:string|null;channel_id:string|null;channel_name:string|null;checked_at:number;reconciled_at:number};
+type Control={enabled:number;organization_id:string|null;channel_id:string|null;channel_name:string|null;checked_at:number;reconciled_at:number;last_error:string|null};
+function channelProblem(channel:any){
+ if(channel.isDisconnected!==false)return 'Buffer has lost access to LinkedIn. Refresh the connection in Buffer; complete any LinkedIn account verification first.';
+ if(channel.isLocked!==false)return 'The LinkedIn channel is locked in Buffer. Review the connected channel and plan in Buffer.';
+ if(channel.isQueuePaused!==false)return 'The LinkedIn queue is paused in Buffer. Review it before enabling automatic publishing.';
+ return null;
+}
+async function pauseForProblem(env:LinkedInEnv,message:string){
+ await env.DB.prepare('UPDATE linkedin_control SET enabled=0,last_error=? WHERE id=1').bind(message).run();
+}
 const literal=(value:string)=>JSON.stringify(value);
 async function buffer(env:LinkedInEnv,query:string,fetcher:typeof fetch){
  const key=String(env.BUFFER_API_KEY||'').trim();
@@ -29,12 +38,14 @@ export async function checkLinkedInConnection(env:LinkedInEnv,options:{fetcher?:
  try{
   const data=await buffer(env,'query { account { organizations { id name } } }',fetcher);
   for(const org of (data.account?.organizations||[]).slice(0,3)){
-   const result=await buffer(env,`query { channels(input:{organizationId:${literal(org.id)}}) { id name service } }`,fetcher);
+   const result=await buffer(env,`query { channels(input:{organizationId:${literal(org.id)}}) { id name service isDisconnected isLocked isQueuePaused } }`,fetcher);
    const channel=result.channels?.find((c:any)=>c.id===env.BUFFER_CHANNEL_ID&&c.service==='linkedin');
    if(!channel)continue;
    // Buffer's General settings link this exact channel to linkedin.com/in/jobveylo-68b006447.
    // The live read-only API check returned the same profile slug. Keep both identity checks.
    if(channel.name!=='jobveylo-68b006447')return {state:'wrong_account',message:'Publishing paused: Buffer API profile label is '+String(channel.name||'unknown').slice(0,100)+'. Verify this against the connected profile in Buffer.',channelId:channel.id};
+   const problem=channelProblem(channel);
+   if(problem){await pauseForProblem(env,problem);return {state:'connection_failed',message:problem}}
    await env.DB.prepare('UPDATE linkedin_control SET organization_id=?,channel_id=?,channel_name=?,checked_at=? WHERE id=1').bind(org.id,channel.id,channel.name,options.now??Date.now()).run();
    return {state:'connected',message:'Buffer authenticated the LinkedIn profile JobVeylo .',channel:channel.name};
   }
@@ -47,14 +58,19 @@ async function reconcile(env:LinkedInEnv,control:Control,now:number,fetcher:type
  const claim=await env.DB.prepare('UPDATE linkedin_control SET reconciled_at=? WHERE id=1 AND reconciled_at=? RETURNING id').bind(now,control.reconciled_at).first();
  if(!claim)return;
  const pending=await env.DB.prepare("SELECT listing_id,buffer_id FROM linkedin_jobs WHERE status='scheduled' AND buffer_id IS NOT NULL LIMIT 10").all<{listing_id:string;buffer_id:string}>();
- if(!pending.results.length)return;
- const query='query { '+pending.results.map((row,i)=>`p${i}:post(input:{id:${literal(row.buffer_id)}}) { id status channelId }`).join(' ')+' }';
+ const query=`query { channel(input:{id:${literal(control.channel_id||'')}}) { id name service isDisconnected isLocked isQueuePaused } `+pending.results.map((row,i)=>`p${i}:post(input:{id:${literal(row.buffer_id)}}) { id status channelId }`).join(' ')+' }';
  const data=await buffer(env,query,fetcher);
+ const channel=data.channel;
+ const problem=channel?.id===control.channel_id&&channel?.name==='jobveylo-68b006447'&&channel?.service==='linkedin'?channelProblem(channel):'Buffer channel identity could not be verified. Review the connection before publishing.';
+ if(problem)await pauseForProblem(env,problem);
  for(let i=0;i<pending.results.length;i++){
   const post=data['p'+i];if(!post||post.channelId!==control.channel_id)continue;
   const status=String(post.status).toLowerCase();
   if(status==='sent')await env.DB.prepare("UPDATE linkedin_jobs SET status='sent',sent_at=?,last_error=NULL WHERE listing_id=? AND status='scheduled'").bind(new Date(now).toISOString(),pending.results[i].listing_id).run();
-  else if(status==='error')await env.DB.prepare("UPDATE linkedin_jobs SET status='held',last_error='Buffer reported a delivery error. Review the post in Buffer before retrying.' WHERE listing_id=? AND status='scheduled'").bind(pending.results[i].listing_id).run();
+  else if(status==='error'){
+   await env.DB.prepare("UPDATE linkedin_jobs SET status='held',last_error='Buffer reported a delivery error. Review the post in Buffer before retrying.' WHERE listing_id=? AND status='scheduled'").bind(pending.results[i].listing_id).run();
+   await pauseForProblem(env,problem||'Buffer reported a delivery error. Automatic submissions paused; review the failed post and connection in Buffer before resuming.');
+  }
  }
 }
 export async function runLinkedInPublishing(env:LinkedInEnv,options:{fetcher?:typeof fetch;now?:number}={}){
@@ -76,6 +92,8 @@ async function publishSlot(env:LinkedInEnv,options:{fetcher?:typeof fetch;now?:n
    Object.assign(control,await env.DB.prepare('SELECT * FROM linkedin_control WHERE id=1').first());
   }
   await reconcile(env,control,now,fetcher);
+  const current=await env.DB.prepare('SELECT enabled,last_error FROM linkedin_control WHERE id=1').first<{enabled:number;last_error:string|null}>();
+  if(!current?.enabled)return {state:'paused',message:current?.last_error||'LinkedIn paused.'};
  }catch{return {state:'connection_failed'}}
  await env.DB.prepare("UPDATE linkedin_jobs SET status='held',lease_until=0,last_error='Interrupted Buffer request; inspect Buffer before retrying to avoid duplicates.' WHERE status='creating' AND lease_until<?").bind(now).run();
  const outstanding=await env.DB.prepare("SELECT COUNT(*) AS n FROM linkedin_jobs WHERE status IN ('creating','scheduled')").first<{n:number}>();

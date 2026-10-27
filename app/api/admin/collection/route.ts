@@ -21,7 +21,7 @@ export async function POST(request:Request){
    const result=await bindings().COLLECTOR!.fetch('https://collector/'+(action.action==='render'?'render':'renderer-status'),{method:'POST'});
    return Response.json(await result.json(),{status:result.status,headers});
   }
-  if(action.action==='instagram-check'||action.action==='reel-insights-check'){
+  if(action.action==='instagram-check'||action.action==='reel-insights-check'||action.action==='instagram-reconcile'){
    if(!bindings().COLLECTOR)return Response.json({error:'Collector is not connected.'},{status:503,headers});
    const result=await bindings().COLLECTOR!.fetch('https://collector/'+action.action,{method:'POST'});
    return Response.json(await result.json(),{status:result.status,headers});
