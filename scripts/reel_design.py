@@ -112,7 +112,7 @@ def poster(job):
     draw, records = ImageDraw.Draw(image), []
     variant = 'B' if job.get('variant') == 'B' else 'A'
     fit(draw, 'JobVeylo', (90, 135, 930, 195), size=48, minimum=48, bold=True, color=LIME)
-    fit(draw, 'SAMPLE · DESIGN PREVIEW' if job.get('_preview') else 'VERIFIED JOB OPENING', (90, 216, 930, 254), size=25, minimum=25, color=MUTED)
+    fit(draw, 'SAMPLE · NOW HIRING' if job.get('_preview') else 'NOW HIRING', (90, 216, 930, 254), size=25, minimum=25, color=MUTED)
     location = str(job.get('location') or 'Check employer location')
     hook = str(job.get('hook') or ('INTERNSHIP' if re.search(r'\bintern(?:ship)?\b', str(job.get('title', '')), re.I) else job.get('experience') or 'Check experience in notice'))
     company, title = str(job.get('company', '')), str(job.get('title', ''))
