@@ -1,0 +1,677 @@
+[
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        300,
+        980,
+        390
+      ],
+      "font_size": 68,
+      "lines": [
+        "0\u20132 YEARS"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        440,
+        980,
+        755
+      ],
+      "font_size": 134,
+      "lines": [
+        "5 TECH",
+        "JOBS"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        800,
+        980,
+        880
+      ],
+      "font_size": 54,
+      "lines": [
+        "BENGALURU"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1000,
+        980,
+        1070
+      ],
+      "font_size": 43,
+      "lines": [
+        "Swipe to find your fit"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "1/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        275,
+        980,
+        365
+      ],
+      "font_size": 68,
+      "lines": [
+        "NOW HIRING"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        410,
+        980,
+        495
+      ],
+      "font_size": 54,
+      "lines": [
+        "AiPrise"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        540,
+        980,
+        775
+      ],
+      "font_size": 78,
+      "lines": [
+        "Software Engineer I"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        855,
+        965,
+        925
+      ],
+      "font_size": 48,
+      "lines": [
+        "Bengaluru"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        950,
+        965,
+        1015
+      ],
+      "font_size": 48,
+      "lines": [
+        "0\u20132 years"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "2/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        275,
+        980,
+        365
+      ],
+      "font_size": 68,
+      "lines": [
+        "NOW HIRING"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        410,
+        980,
+        495
+      ],
+      "font_size": 54,
+      "lines": [
+        "Advance Sensing"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        540,
+        980,
+        775
+      ],
+      "font_size": 78,
+      "lines": [
+        "Software Engineer"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        855,
+        965,
+        925
+      ],
+      "font_size": 48,
+      "lines": [
+        "Bengaluru"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        950,
+        965,
+        1015
+      ],
+      "font_size": 48,
+      "lines": [
+        "0\u20132 years"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "3/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        275,
+        980,
+        365
+      ],
+      "font_size": 68,
+      "lines": [
+        "NOW HIRING"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        410,
+        980,
+        495
+      ],
+      "font_size": 54,
+      "lines": [
+        "Advance Sensing"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        540,
+        980,
+        775
+      ],
+      "font_size": 78,
+      "lines": [
+        "Data Scientist / AI-ML ",
+        "Engineer"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        855,
+        965,
+        925
+      ],
+      "font_size": 48,
+      "lines": [
+        "Bengaluru"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        950,
+        965,
+        1015
+      ],
+      "font_size": 48,
+      "lines": [
+        "0\u20132 years"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "4/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        275,
+        980,
+        365
+      ],
+      "font_size": 68,
+      "lines": [
+        "NOW HIRING"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        410,
+        980,
+        495
+      ],
+      "font_size": 54,
+      "lines": [
+        "Advance Sensing"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        540,
+        980,
+        775
+      ],
+      "font_size": 78,
+      "lines": [
+        "Machine Vision ",
+        "Engineer"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        855,
+        965,
+        925
+      ],
+      "font_size": 48,
+      "lines": [
+        "Bengaluru"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        950,
+        965,
+        1015
+      ],
+      "font_size": 48,
+      "lines": [
+        "0\u20132 years"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "5/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        275,
+        980,
+        365
+      ],
+      "font_size": 68,
+      "lines": [
+        "NOW HIRING"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        410,
+        980,
+        495
+      ],
+      "font_size": 54,
+      "lines": [
+        "Advance Sensing"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        540,
+        980,
+        775
+      ],
+      "font_size": 78,
+      "lines": [
+        "Application Engineer"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        855,
+        965,
+        925
+      ],
+      "font_size": 48,
+      "lines": [
+        "Bengaluru"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        950,
+        965,
+        1015
+      ],
+      "font_size": 48,
+      "lines": [
+        "0\u20132 years"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "6/7"
+      ],
+      "clipped": false
+    }
+  ],
+  [
+    {
+      "name": "",
+      "box": [
+        100,
+        155,
+        980,
+        205
+      ],
+      "font_size": 34,
+      "lines": [
+        "JobVeylo"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        320,
+        980,
+        420
+      ],
+      "font_size": 72,
+      "lines": [
+        "SAVE + SHARE"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        490,
+        980,
+        625
+      ],
+      "font_size": 108,
+      "lines": [
+        "APPLY"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        115,
+        745,
+        965,
+        820
+      ],
+      "font_size": 64,
+      "lines": [
+        "LINK IN BIO"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        930,
+        980,
+        1020
+      ],
+      "font_size": 42,
+      "lines": [
+        "Search company + role"
+      ],
+      "clipped": false
+    },
+    {
+      "name": "",
+      "box": [
+        100,
+        1160,
+        980,
+        1205
+      ],
+      "font_size": 28,
+      "lines": [
+        "7/7"
+      ],
+      "clipped": false
+    }
+  ]
+]
