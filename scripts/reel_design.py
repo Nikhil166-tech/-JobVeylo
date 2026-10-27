@@ -110,9 +110,12 @@ def poster(job):
     """Two single-page hierarchies; duration, audio, colors and facts stay the same."""
     image = Image.new('RGB', (W, H), NAVY)
     draw, records = ImageDraw.Draw(image), []
+    def centered(value, box, **options):
+        fit(draw, value, box, align='center', **options)
+
     variant = 'B' if job.get('variant') == 'B' else 'A'
-    fit(draw, 'JobVeylo · SAMPLE' if job.get('_preview') else 'JobVeylo', (90, 125, 930, 175), size=36, minimum=36, bold=True, color=MUTED)
-    fit(draw, 'NOW HIRING', (90, 195, 930, 275), size=68, minimum=60, bold=True, color=LIME, records=records, name='hiring_headline')
+    centered('JobVeylo · SAMPLE' if job.get('_preview') else 'JobVeylo', (90, 300, 990, 350), size=36, minimum=36, bold=True, color=MUTED)
+    centered('NOW HIRING', (90, 370, 990, 450), size=68, minimum=60, bold=True, color=LIME, records=records, name='hiring_headline')
     location = str(job.get('location') or 'Check employer location')
     hook = str(job.get('hook') or ('INTERNSHIP' if re.search(r'\bintern(?:ship)?\b', str(job.get('title', '')), re.I) else job.get('experience') or 'Check experience in notice'))
     company, title = str(job.get('company', '')), str(job.get('title', ''))
@@ -121,18 +124,18 @@ def poster(job):
         if place.split(',')[0].lower().replace('bangalore','bengaluru') in location.lower().replace('bangalore','bengaluru') or 'India' == location:
             title = title.replace(' (' + place + ')', '')
     if variant == 'A':
-        draw.rounded_rectangle((88, 290, 932, 425), 22, fill=LIME)
-        fit(draw, hook.upper(), (115, 315, 905, 405), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
-        fit(draw, company.upper(), (90, 460, 930, 540), size=53, minimum=38, bold=True, records=records, name='company')
-        fit(draw, title, (90, 570, 930, 785), size=80, minimum=44, bold=True, records=records, name='title')
+        draw.rounded_rectangle((90, 475, 990, 590), 22, fill=LIME)
+        centered(hook.upper(), (115, 495, 965, 580), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
+        centered(company.upper(), (90, 620, 990, 690), size=53, minimum=38, bold=True, records=records, name='company')
+        centered(title, (90, 720, 990, 900), size=80, minimum=44, bold=True, records=records, name='title')
     else:
-        fit(draw, company.upper(), (90, 290, 930, 370), size=53, minimum=38, bold=True, records=records, name='company')
-        fit(draw, title, (90, 395, 930, 610), size=80, minimum=44, bold=True, records=records, name='title')
-        draw.rounded_rectangle((88, 650, 932, 785), 22, fill=LIME)
-        fit(draw, hook.upper(), (115, 675, 905, 765), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
-    draw.rounded_rectangle((88, 820, 932, 1010), 22, fill='#102342')
-    fit(draw, 'LOCATION / ELIGIBILITY', (115, 840, 905, 875), size=25, minimum=25, color=MUTED)
-    fit(draw, location, (115, 890, 905, 990), size=43, minimum=32, bold=True, records=records, name='location')
+        centered(company.upper(), (90, 475, 990, 545), size=53, minimum=38, bold=True, records=records, name='company')
+        centered(title, (90, 570, 990, 755), size=80, minimum=44, bold=True, records=records, name='title')
+        draw.rounded_rectangle((90, 785, 990, 900), 22, fill=LIME)
+        centered(hook.upper(), (115, 805, 965, 890), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
+    draw.rounded_rectangle((90, 930, 990, 1090), 22, fill='#102342')
+    centered('LOCATION / ELIGIBILITY', (115, 948, 965, 983), size=25, minimum=25, color=MUTED)
+    centered(location, (115, 998, 965, 1080), size=43, minimum=32, bold=True, records=records, name='location')
     salary = short_salary(job.get('salary'))
     education = str(job.get('education') or '')
     facts = []
@@ -141,15 +144,15 @@ def poster(job):
     if known_education(education):
         facts.append(education)
     if facts:
-        fit(draw, '\n'.join(facts), (90, 1050, 930, 1245), size=39, minimum=32, records=records, name='facts')
+        centered('\n'.join(facts), (90, 1105, 990, 1265), size=39, minimum=32, records=records, name='facts')
     else:
-        fit(draw, 'Read the employer’s full eligibility before applying.', (90, 1060, 930, 1195), size=36, minimum=32, color=MUTED)
-    draw.rounded_rectangle((88, 1290, 932, 1420), 22, fill='#102342', outline='#294AFF', width=3)
-    fit(draw, '1. Open the bio link\n2. Search company + role', (115, 1315, 905, 1400), size=34, minimum=30, records=records, name='apply_steps')
-    draw.rounded_rectangle((88, 1480, 932, 1595), 30, fill=LIME)
-    fit(draw, 'VIEW JOB · LINK IN BIO', (115, 1515, 905, 1575), size=46, minimum=36, bold=True, color=NAVY, align='center', records=records, name='call_to_action')
-    fit(draw, 'Search: ' + company + ' · ' + title, (90, 1630, 930, 1740), size=29, minimum=26, align='center', color=WHITE, records=records, name='search_hint')
-    fit(draw, '@jobveylo · Check full eligibility', (90, 1770, 930, 1815), size=26, minimum=24, align='center', color=MUTED)
+        centered('Read the employer’s full eligibility before applying.', (90, 1120, 990, 1230), size=36, minimum=32, color=MUTED)
+    draw.rounded_rectangle((90, 1275, 990, 1380), 22, fill='#102342', outline='#294AFF', width=3)
+    centered('1. Open the bio link\n2. Search company + role', (115, 1290, 965, 1375), size=34, minimum=30, records=records, name='apply_steps')
+    draw.rounded_rectangle((90, 1410, 990, 1515), 30, fill=LIME)
+    centered('VIEW JOB · LINK IN BIO', (115, 1433, 965, 1500), size=46, minimum=36, bold=True, color=NAVY, records=records, name='call_to_action')
+    centered('Search: ' + company + ' · ' + title, (90, 1540, 990, 1645), size=29, minimum=26, color=WHITE, records=records, name='search_hint')
+    centered('@jobveylo · Check full eligibility', (90, 1670, 990, 1710), size=26, minimum=24, color=MUTED)
     return image, records
 
 
@@ -193,7 +196,7 @@ def render(job, target, work):
                 image = base.copy()
                 # Only a fine accent pulses; all job details remain visible.
                 strength = int(110 + 80 * (1 + math.sin(2 * math.pi * frame / FPS / 2)) / 2)
-                ImageDraw.Draw(image).rounded_rectangle((88, 1480, 932, 1595), 30, outline=(strength, 210, 150), width=2)
+                ImageDraw.Draw(image).rounded_rectangle((90, 1410, 990, 1515), 30, outline=(strength, 210, 150), width=2)
                 process.stdin.write(image.tobytes())
             process.stdin.close()
             result = process.wait()
