@@ -156,20 +156,20 @@ def poster(job):
     return image, records
 
 
-def music(target):
+def music(target, duration=DURATION):
     """One original mellow electronic instrumental, reused across JobVeylo reels."""
     rate, beat_seconds = 44100, 0.6
     chords = [(130.81, 164.81, 196, 246.94), (110, 130.81, 164.81, 196),
               (87.31, 110, 130.81, 164.81), (98, 123.47, 146.83, 196)]
     melody = [523.25, 659.25, 783.99, 659.25, 587.33, 659.25, 523.25, 392]
     data = bytearray()
-    for n in range(rate * DURATION):
+    for n in range(rate * duration):
         t, beat = n / rate, (n / rate) % beat_seconds
-        chord = chords[min(3, int(t / (DURATION / 4)))]
+        chord = chords[min(3, int(t / (duration / 4)))]
         pad = sum(math.sin(2 * math.pi * tone * t) for tone in chord) * 0.024
         kick = math.sin(2 * math.pi * (48 * beat + 18 * (1 - math.exp(-25 * beat)))) * math.exp(-25 * beat) * 0.11
         bell = math.sin(2 * math.pi * melody[int(t / beat_seconds) % len(melody)] * t) * math.exp(-7 * beat) * 0.037
-        fade = max(0, min(1, t / 0.5, (DURATION - t) / 1.4))
+        fade = max(0, min(1, t / 0.5, (duration - t) / 1.4))
         data.extend(struct.pack('<h', int(max(-1, min(1, (pad + kick + bell) * fade)) * 32767)))
     with wave.open(str(target), 'wb') as wav:
         wav.setnchannels(1)

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "accenture-custom-software-engineer-bengaluru-s1958852",
+    "company": "Accenture",
+    "title": "Custom Software Engineer",
+    "city": "Bengaluru",
+    "experience": "0–2 years",
+    "note": "Cloud Contact Center skills required"
+  },
+  {
+    "id": "heizen-software-engineer-fullstack-react-native",
+    "company": "Heizen",
+    "title": "Software Engineer\nFullstack + React Native",
+    "city": "Remote / Hyderabad",
+    "experience": "0–2 years",
+    "note": "Confirm remote eligibility"
+  },
+  {
+    "id": "kyvo-frontend-backend-engineer-pune",
+    "company": "Kyvo",
+    "title": "Frontend Engineer",
+    "city": "Pune",
+    "experience": "0–2 years",
+    "note": ""
+  },
+  {
+    "id": "kyvo-frontend-backend-engineer-pune",
+    "company": "Kyvo",
+    "title": "Backend Engineer",
+    "city": "Pune",
+    "experience": "0–2 years",
+    "note": ""
+  },
+  {
+    "id": "kyvo-frontend-backend-engineer-pune",
+    "company": "Kyvo",
+    "title": "Full-Stack Engineer",
+    "city": "Pune",
+    "experience": "0–2 years",
+    "note": ""
+  }
+]

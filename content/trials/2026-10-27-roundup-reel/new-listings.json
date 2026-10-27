@@ -1,0 +1,74 @@
+[
+  {
+    "version": 1,
+    "region": "India",
+    "category": "Private",
+    "level": "Fresher",
+    "experience": "0–2 years",
+    "batch": "Not specified",
+    "salary": "Employer lists ₹12–18L fixed + ESOPs; confirm pay period and terms.",
+    "fees": "Not specified",
+    "deadline": "Not specified",
+    "checked": "2026-10-27",
+    "sourceType": "Employer",
+    "selection": "Not specified by the employer",
+    "note": "Employer career page checked on 27 October 2026; the experience range is explicitly stated. Confirm current availability and full eligibility before applying.",
+    "tags": [
+      "0–2 years",
+      "Technology"
+    ],
+    "status": "published",
+    "reviewed": true,
+    "id": "heizen-software-engineer-fullstack-react-native",
+    "title": "Software Engineer (Fullstack + React Native)",
+    "company": "Heizen",
+    "location": "Remote / Hyderabad, India; confirm remote eligibility with employer",
+    "remote": true,
+    "education": "Not specified",
+    "url": "https://www.heizen.work/careers/software-engineer-fullstack-app",
+    "summary": "Build web and mobile software for client projects, with responsibility from planning through delivery.",
+    "details": "Implement full-stack features and React Native applications.\nConnect APIs, user interfaces, databases and cloud services.\nWork with clients and demonstrate delivered features.",
+    "requirements": [
+      "Full-stack and React Native development skills.",
+      "JavaScript or TypeScript and familiarity with a backend language.",
+      "Basic databases, web APIs and cloud knowledge, or willingness to learn."
+    ],
+    "howToApply": "Read the employer job page and use its Apply Now form. Check remote location eligibility and compensation terms."
+  },
+  {
+    "version": 2,
+    "region": "India",
+    "category": "Private",
+    "level": "Fresher",
+    "experience": "0–2 years",
+    "batch": "Not specified",
+    "salary": "Not disclosed",
+    "fees": "Not specified",
+    "deadline": "Not specified",
+    "checked": "2026-10-27",
+    "sourceType": "Employer",
+    "selection": "Application review, introductory call, practical technical discussion or exercise, then a team meeting.",
+    "note": "Employer career page checked on 27 October 2026; the experience range is explicitly stated. Confirm current availability and full eligibility before applying.",
+    "tags": [
+      "0–2 years",
+      "Technology"
+    ],
+    "status": "published",
+    "reviewed": true,
+    "id": "kyvo-frontend-backend-engineer-pune",
+    "title": "Frontend, Backend and Full-Stack Engineer — three openings",
+    "company": "Kyvo",
+    "location": "Pune, India",
+    "remote": false,
+    "education": "No specific degree requirement stated for these two roles",
+    "url": "https://kyvo-ai.com/careers/",
+    "summary": "Three engineering openings in Pune: web interfaces, backend services and full-stack product development.",
+    "details": "Frontend: build responsive interfaces and improve accessibility.\nBackend: develop APIs, data pipelines and AI-backed services.\nFull-Stack: develop product features across databases and web interfaces.",
+    "requirements": [
+      "Frontend: HTML, CSS, JavaScript or TypeScript and a modern UI framework.",
+      "Backend: Node.js, Python or similar, databases, APIs and cloud deployment.",
+      "Full-Stack: JavaScript or TypeScript, a backend language, SQL and REST APIs."
+    ],
+    "howToApply": "Open the employer careers page and choose Frontend Engineer, Backend Engineer or Full-Stack Engineer in its application form."
+  }
+]
