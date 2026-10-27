@@ -1,0 +1,13 @@
+{
+  "provider": "Metricool",
+  "brandId": "7494491",
+  "postId": 407903760,
+  "uuid": "-7669205858326658469",
+  "network": "instagram",
+  "type": "REEL",
+  "status": "PENDING",
+  "autoPublish": true,
+  "scheduledFor": "2026-10-27T21:30:00+05:30",
+  "durationSeconds": 15,
+  "plannerUrl": "https://app.metricool.com/planner/calendar?blogId=7494491&openWithPostUuid=-7669205858326658469"
+}
