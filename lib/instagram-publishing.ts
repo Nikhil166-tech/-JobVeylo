@@ -72,7 +72,7 @@ export function reelCaption(job:any,origin:string){
  const salary=String(job.salary||'').trim();
  const pay=salary&&!/^(?:not\b|n\/?a\b|tbd\b|unknown\b|undisclosed\b|competitive\b|negotiable\b|see\b)/i.test(salary)?'\n💰 Salary: '+salary.slice(0,150):'';
  const education=String(job.education||'');const qualification=education&&!/^(?:not\b|no explicit\b|see\b|unknown\b|n\/?a\b)/i.test(education)?'\n🎓 '+education.slice(0,160):'';
- return `💼 ${job.company} — ${job.title}\n📍 ${job.location}\n💻 Experience: ${String(job.experience).slice(0,120)}${qualification}${pay}\n\n🔗 Apply: open the link in @jobveylo’s bio.\nSearch “${job.company} ${job.title}”.\n\n📄 Tailor an ATS-friendly resume for this job on JobVeylo.\nUpload → tailor → review & download.\n\nJob details:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job)}`;
+ return `💼 ${job.company} is hiring\n${job.title}\n\n💻 Experience: ${String(job.experience).slice(0,120)}\n📍 ${job.location}${qualification}${pay}\n\n🔗 VIEW THIS JOB & APPLY\n1. Open the link in @jobveylo’s bio.\n2. Search “${job.company} ${job.title}”.\n3. Read eligibility and select Apply.\n\nExact job page:\n${campaignLink(origin,'/jobs/'+encodeURIComponent(job.id),'instagram','job_reel',job.id)}\n\nJobVeylo • Check the latest employer notice before applying.\n\n${reelHashtags(job).split(' ').filter(tag=>tag!=='#ATSResume').join(' ')}`;
 }
 export async function activeEmployer(job:any,fetcher:typeof fetch){
  const source=collectionSources.find(s=>s.company===job.company&&['ashby','lever','greenhouse'].includes(s.kind));

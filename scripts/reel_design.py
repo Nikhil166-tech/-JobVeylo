@@ -145,9 +145,9 @@ def poster(job):
     else:
         fit(draw, 'Read the employer’s full eligibility before applying.', (90, 1060, 930, 1195), size=36, minimum=32, color=MUTED)
     draw.rounded_rectangle((88, 1290, 932, 1420), 22, fill='#102342', outline='#294AFF', width=3)
-    fit(draw, 'Tailor your ATS-friendly resume\nfor this job on JobVeylo', (115, 1315, 905, 1400), size=34, minimum=30, records=records, name='resume_service')
+    fit(draw, '1. Open the bio link\n2. Search company + role', (115, 1315, 905, 1400), size=34, minimum=30, records=records, name='apply_steps')
     draw.rounded_rectangle((88, 1480, 932, 1595), 30, fill=LIME)
-    fit(draw, 'APPLY · LINK IN BIO', (115, 1515, 905, 1575), size=46, minimum=36, bold=True, color=NAVY, align='center', records=records, name='call_to_action')
+    fit(draw, 'VIEW JOB · LINK IN BIO', (115, 1515, 905, 1575), size=46, minimum=36, bold=True, color=NAVY, align='center', records=records, name='call_to_action')
     fit(draw, 'Search: ' + company + ' · ' + title, (90, 1630, 930, 1740), size=29, minimum=26, align='center', color=WHITE, records=records, name='search_hint')
     fit(draw, '@jobveylo · Check full eligibility', (90, 1770, 930, 1815), size=26, minimum=24, align='center', color=MUTED)
     return image, records
@@ -191,7 +191,7 @@ def render(job, target, work):
         try:
             for frame in range(FPS * DURATION):
                 image = base.copy()
-                # Only a fine accent pulses; all job and resume details remain visible.
+                # Only a fine accent pulses; all job details remain visible.
                 strength = int(110 + 80 * (1 + math.sin(2 * math.pi * frame / FPS / 2)) / 2)
                 ImageDraw.Draw(image).rounded_rectangle((88, 1480, 932, 1595), 30, outline=(strength, 210, 150), width=2)
                 process.stdin.write(image.tobytes())
