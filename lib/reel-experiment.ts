@@ -1,4 +1,4 @@
-import {careerPriority} from './job-priority.ts';
+import {careerPriority,experienceBounds} from './job-priority.ts';
 export type ReelExperiment={starts_at:number;ends_at:number;version:string;enabled:number};
 export const experiment=(db:D1Database)=>db.prepare('SELECT * FROM reel_experiment WHERE id=1').first<ReelExperiment>();
 export function reelWindow(now:number,render=false){
@@ -8,6 +8,9 @@ export function reelWindow(now:number,render=false){
 }
 export function eligibleReel(job:any){
  const p=careerPriority(job);
+ const bounds=experienceBounds([job.experience||'',...(job.requirements||[]).filter((line:string)=>!/^topics referenced/i.test(line))].join('\n'));
+ // Instagram is strictly 0–2 years; website collection keeps its broader audience.
+ if(p.minimum===null||p.minimum>2||bounds.some(b=>b.min>2||(b.max!==null&&b.max>2)))return false;
  // Unknown experience does not become fresher eligibility. Internships are labelled as internships.
  return p.rank<=1&&(!/\b(?:senior|principal|staff|lead|manager|director|architect)\b/i.test(job.title||''))&&!(job.deadline&&job.deadline!=='Not specified'&&job.deadline<new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}));
 }
@@ -15,10 +18,11 @@ export function experienceHook(job:any){
  return /\bintern(?:ship)?\b/i.test(job.title||'')?'INTERNSHIP':String(job.experience||'').replace(/—.*$/,'').trim().slice(0,70);
 }
 export async function prepareReelTest(db:D1Database,test:ReelExperiment,now=Date.now()){
- const rows=await db.prepare("SELECT s.listing_id,l.data FROM social_jobs s JOIN listings l ON l.id=s.listing_id LEFT JOIN reel_test_jobs t ON t.listing_id=s.listing_id WHERE s.status IN ('waiting_media','rendering','media_ready','creating','processing') AND l.status='published' AND t.listing_id IS NULL ORDER BY s.priority,s.created_at LIMIT 300").all<{listing_id:string;data:string}>();
+ const rows=await db.prepare("SELECT s.listing_id,l.data,t.listing_id AS assigned FROM social_jobs s JOIN listings l ON l.id=s.listing_id LEFT JOIN reel_test_jobs t ON t.listing_id=s.listing_id WHERE s.status IN ('waiting_media','rendering','media_ready','creating','processing') AND l.status='published' ORDER BY s.priority,s.created_at LIMIT 300").all<{listing_id:string;data:string;assigned:string|null}>();
  for(const row of rows.results){
   const job=JSON.parse(row.data);
-  if(!eligibleReel(job)){await db.prepare("UPDATE social_jobs SET status='excluded',last_error='Outside the 0–3-year / internship Instagram test audience.',lease_until=0 WHERE listing_id=? AND status NOT IN ('published','publishing')").bind(row.listing_id).run();continue}
+  if(!eligibleReel(job)){await db.prepare("UPDATE social_jobs SET status='excluded',last_error='Outside the 0–2-year / internship Instagram test audience.',lease_until=0 WHERE listing_id=? AND status NOT IN ('published','publishing')").bind(row.listing_id).run();continue}
+  if(row.assigned)continue;
   const stratum=(job.region==='India'?'India':'Overseas')+(/\bintern(?:ship)?\b/i.test(job.title)?' internship':' early career');
   const count=await db.prepare('SELECT COUNT(*) AS n FROM reel_test_jobs WHERE version=? AND stratum=?').bind(test.version,stratum).first<{n:number}>();
   await db.batch([
