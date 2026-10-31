@@ -114,8 +114,8 @@ def poster(job):
         fit(draw, value, box, align='center', **options)
 
     variant = 'B' if job.get('variant') == 'B' else 'A'
-    centered('JobVeylo · SAMPLE' if job.get('_preview') else 'JobVeylo', (90, 300, 990, 350), size=36, minimum=36, bold=True, color=MUTED)
-    centered('NOW HIRING', (90, 370, 990, 450), size=68, minimum=60, bold=True, color=LIME, records=records, name='hiring_headline')
+    centered('JobVeylo · SAMPLE' if job.get('_preview') else '@jobveylo', (90, 300, 990, 350), size=30, minimum=30, color=MUTED)
+    centered('HIRING', (90, 370, 990, 450), size=76, minimum=68, bold=True, color=LIME, records=records, name='hiring_headline')
     location = str(job.get('location') or 'Check employer location')
     hook = str(job.get('hook') or ('INTERNSHIP' if re.search(r'\bintern(?:ship)?\b', str(job.get('title', '')), re.I) else job.get('experience') or 'Check experience in notice'))
     company, title = str(job.get('company', '')), str(job.get('title', ''))
@@ -137,22 +137,16 @@ def poster(job):
     centered('LOCATION / ELIGIBILITY', (115, 948, 965, 983), size=25, minimum=25, color=MUTED)
     centered(location, (115, 998, 965, 1080), size=43, minimum=32, bold=True, records=records, name='location')
     salary = short_salary(job.get('salary'))
-    education = str(job.get('education') or '')
-    facts = []
+    # Keep the opening easy to scan. Full qualifications stay on the job page.
     if disclosed_pay(salary):
-        facts.append(salary)
-    if known_education(education):
-        facts.append(education)
-    if facts:
-        centered('\n'.join(facts), (90, 1105, 990, 1265), size=39, minimum=32, records=records, name='facts')
+        centered(salary, (100, 1130, 980, 1240), size=42, minimum=32, bold=True, records=records, name='salary')
     else:
-        centered('Read the employer’s full eligibility before applying.', (90, 1120, 990, 1230), size=36, minimum=32, color=MUTED)
-    draw.rounded_rectangle((90, 1275, 990, 1380), 22, fill='#102342', outline='#294AFF', width=3)
-    centered('1. Open the bio link\n2. Search company + role', (115, 1290, 965, 1375), size=34, minimum=30, records=records, name='apply_steps')
+        centered('SAVE THIS OPPORTUNITY', (100, 1130, 980, 1200), size=36, minimum=32, color=WHITE, records=records, name='save_prompt')
+    centered('Apply: link in bio', (115, 1290, 965, 1360), size=52, minimum=42, bold=True, color=LIME, records=records, name='apply_steps')
     draw.rounded_rectangle((90, 1410, 990, 1515), 30, fill=LIME)
-    centered('VIEW JOB · LINK IN BIO', (115, 1433, 965, 1500), size=46, minimum=36, bold=True, color=NAVY, records=records, name='call_to_action')
-    centered('Search: ' + company + ' · ' + title, (90, 1540, 990, 1645), size=29, minimum=26, color=WHITE, records=records, name='search_hint')
-    centered('@jobveylo · Check full eligibility', (90, 1670, 990, 1710), size=26, minimum=24, color=MUTED)
+    centered('SAVE + SHARE', (115, 1433, 965, 1500), size=46, minimum=36, bold=True, color=NAVY, records=records, name='call_to_action')
+    centered('Search company + role on JobVeylo', (90, 1540, 990, 1645), size=32, minimum=28, color=WHITE, records=records, name='search_hint')
+    centered('Check the latest employer notice before applying.', (90, 1670, 990, 1740), size=26, minimum=24, color=MUTED)
     return image, records
 
 
