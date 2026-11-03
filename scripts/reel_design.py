@@ -107,46 +107,36 @@ def known_education(value):
 
 
 def poster(job):
-    """Two single-page hierarchies; duration, audio, colors and facts stay the same."""
-    image = Image.new('RGB', (W, H), NAVY)
+    """Approved white/charcoal template; JobVeylo is clearly the publisher."""
+    ink, muted, panel = '#30343B', '#666B72', '#F2F3F4'
+    image = Image.new('RGB', (W, H), '#FFFFFF')
     draw, records = ImageDraw.Draw(image), []
     def centered(value, box, **options):
+        options.setdefault('color', ink)
         fit(draw, value, box, align='center', **options)
-
-    variant = 'B' if job.get('variant') == 'B' else 'A'
-    centered('JobVeylo · SAMPLE' if job.get('_preview') else '@jobveylo', (90, 300, 990, 350), size=30, minimum=30, color=MUTED)
-    centered('HIRING', (90, 370, 990, 450), size=76, minimum=68, bold=True, color=LIME, records=records, name='hiring_headline')
+    fit(draw, 'Shared by JobVeylo', (100, 180, 790, 230), size=29, minimum=29, color=ink)
+    if job.get('_preview'):
+        centered('DESIGN PREVIEW', (650, 185, 970, 225), size=22, minimum=22, color=muted)
+    company = str(job.get('company') or 'Employer')
+    title = str(job.get('title') or 'See job details')
     location = str(job.get('location') or 'Check employer location')
-    hook = str(job.get('hook') or ('INTERNSHIP' if re.search(r'\bintern(?:ship)?\b', str(job.get('title', '')), re.I) else job.get('experience') or 'Check experience in notice'))
-    company, title = str(job.get('company', '')), str(job.get('title', ''))
-    # Location already has its own large row; avoid repeating it in the title.
-    for place in ['Bangalore, India', 'Bengaluru, India']:
-        if place.split(',')[0].lower().replace('bangalore','bengaluru') in location.lower().replace('bangalore','bengaluru') or 'India' == location:
-            title = title.replace(' (' + place + ')', '')
-    if variant == 'A':
-        draw.rounded_rectangle((90, 475, 990, 590), 22, fill=LIME)
-        centered(hook.upper(), (115, 495, 965, 580), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
-        centered(company.upper(), (90, 620, 990, 690), size=53, minimum=38, bold=True, records=records, name='company')
-        centered(title, (90, 720, 990, 900), size=80, minimum=44, bold=True, records=records, name='title')
-    else:
-        centered(company.upper(), (90, 475, 990, 545), size=53, minimum=38, bold=True, records=records, name='company')
-        centered(title, (90, 570, 990, 755), size=80, minimum=44, bold=True, records=records, name='title')
-        draw.rounded_rectangle((90, 785, 990, 900), 22, fill=LIME)
-        centered(hook.upper(), (115, 805, 965, 890), size=56, minimum=36, bold=True, color=NAVY, records=records, name='experience_hook')
-    draw.rounded_rectangle((90, 930, 990, 1090), 22, fill='#102342')
-    centered('LOCATION / ELIGIBILITY', (115, 948, 965, 983), size=25, minimum=25, color=MUTED)
-    centered(location, (115, 998, 965, 1080), size=43, minimum=32, bold=True, records=records, name='location')
+    centered(company.upper() + ' IS', (110, 285, 940, 395), size=54, minimum=30, bold=True, records=records, name='company')
+    centered('HIRING', (110, 410, 940, 575), size=140, minimum=100, bold=True, records=records, name='hiring_headline')
+    hook = str(job.get('hook') or ('INTERNSHIP OPPORTUNITY' if re.search(r'\bintern(?:ship)?\b', title, re.I) else job.get('experience') or 'Check employer eligibility'))
+    draw.rounded_rectangle((125, 605, 925, 700), 40, fill=panel)
+    centered(hook.upper(), (150, 625, 900, 690), size=34, minimum=24, bold=True, records=records, name='experience_hook')
+    centered(title, (115, 755, 935, 1035), size=76, minimum=38, bold=True, records=records, name='title')
+    draw.line((460, 1060, 590, 1060), fill='#91969C', width=3)
+    centered(location, (125, 1090, 925, 1190), size=43, minimum=28, records=records, name='location')
     salary = short_salary(job.get('salary'))
-    # Keep the opening easy to scan. Full qualifications stay on the job page.
     if disclosed_pay(salary):
-        centered(salary, (100, 1130, 980, 1240), size=42, minimum=32, bold=True, records=records, name='salary')
-    else:
-        centered('SAVE THIS OPPORTUNITY', (100, 1130, 980, 1200), size=36, minimum=32, color=WHITE, records=records, name='save_prompt')
-    centered('Apply: link in bio', (115, 1290, 965, 1360), size=52, minimum=42, bold=True, color=LIME, records=records, name='apply_steps')
-    draw.rounded_rectangle((90, 1410, 990, 1515), 30, fill=LIME)
-    centered('SAVE + SHARE', (115, 1433, 965, 1500), size=46, minimum=36, bold=True, color=NAVY, records=records, name='call_to_action')
-    centered('Search company + role on JobVeylo', (90, 1540, 990, 1645), size=32, minimum=28, color=WHITE, records=records, name='search_hint')
-    centered('Check the latest employer notice before applying.', (90, 1670, 990, 1740), size=26, minimum=24, color=MUTED)
+        centered(salary, (125, 1200, 925, 1265), size=30, minimum=24, records=records, name='salary')
+    draw.rounded_rectangle((110, 1290, 940, 1480), 30, fill=panel, outline='#A8ADB3', width=2)
+    centered('TAILOR YOUR RESUME\nFOR THIS JOB', (140, 1315, 910, 1420), size=40, minimum=32, bold=True, records=records, name='resume_headline')
+    centered('Free ATS-friendly tool by JobVeylo', (135, 1425, 915, 1470), size=29, minimum=25, records=records, name='resume_tool')
+    centered('FIND THIS JOB • LINK IN BIO', (115, 1530, 935, 1590), size=39, minimum=30, bold=True, records=records, name='apply_steps')
+    centered('Save for later. Share with a friend.', (115, 1605, 935, 1660), size=30, minimum=26, records=records, name='call_to_action')
+    centered('Check the latest employer notice before applying.', (115, 1680, 935, 1720), size=23, minimum=22, color=muted)
     return image, records
 
 
@@ -190,7 +180,7 @@ def render(job, target, work):
                 image = base.copy()
                 # Only a fine accent pulses; all job details remain visible.
                 strength = int(110 + 80 * (1 + math.sin(2 * math.pi * frame / FPS / 2)) / 2)
-                ImageDraw.Draw(image).rounded_rectangle((90, 1410, 990, 1515), 30, outline=(strength, 210, 150), width=2)
+                ImageDraw.Draw(image).rounded_rectangle((110, 1290, 940, 1480), 30, outline=(strength, strength, strength), width=2)
                 process.stdin.write(image.tobytes())
             process.stdin.close()
             result = process.wait()
