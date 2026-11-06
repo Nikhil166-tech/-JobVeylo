@@ -39,8 +39,8 @@ test('publishes the early-career job first, once per half hour, and enqueues one
  assert.match(sqlite.prepare('SELECT data FROM listings').get().data,/Software Engineer early/);
  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM social_jobs').get().n,1);
  assert.equal((await runAutomaticPublishing(db,{now,fetcher})).state,'already_checked');
- assert.equal((await runAutomaticPublishing(db,{now:now+1800000,fetcher})).state,'published');
- assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM listings').get().n,2);
+ assert.equal((await runAutomaticPublishing(db,{now:now+1800000,fetcher})).state,'empty');
+ assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM listings').get().n,1);
  sqlite.close();
 });
 test('does not publish held, paused-source, government-discovery or disappeared jobs',async()=>{

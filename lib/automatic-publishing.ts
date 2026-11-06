@@ -1,5 +1,5 @@
 import {collectionSources,sourceIndex,candidateFromRow,canonicalJobUrl,readSource,indiaToday,type CollectedJob} from './collection-sources.ts';
-import {careerPriority} from './job-priority.ts';
+import {careerPriority,eligibleEarlyCareer} from './job-priority.ts';
 import {input,canPublish} from './validation.ts';
 
 const knownTopics=['JavaScript','TypeScript','React','Python','Go','Node.js','SQL','NoSQL','AWS','Azure','GCP','Kubernetes','Docker','Kotlin','Flutter','Java','Salesforce','HubSpot','BigQuery','Linux','Windows','HTTP','DNS','TLS'];
@@ -38,7 +38,7 @@ export async function runAutomaticPublishing(db:D1Database,options:{now?:number;
  if(!claimed)return {state:'already_checked'};
  try{
   const pending=await db.prepare("SELECT c.* FROM collection_items c LEFT JOIN publishing_holds h ON h.collection_id=c.id WHERE c.status='pending' AND c.discovery_only=0 AND c.missing_count<2 AND h.collection_id IS NULL AND EXISTS(SELECT 1 FROM collection_sources s WHERE s.id=c.source_id AND s.enabled=1)").all<{id:string;source_id:string;external_id:string;data:string;first_seen:string}>();
-  const ranked=pending.results.map(row=>({...row,job:JSON.parse(row.data)})).sort((a,b)=>careerPriority(a.job).rank-careerPriority(b.job).rank||a.first_seen.localeCompare(b.first_seen));
+  const ranked=pending.results.map(row=>({...row,job:JSON.parse(row.data)})).filter(row=>eligibleEarlyCareer(row.job)).sort((a,b)=>careerPriority(a.job).rank-careerPriority(b.job).rank||a.first_seen.localeCompare(b.first_seen));
   const current=await db.prepare("SELECT id,source_url FROM listings WHERE status<>'archived'").all<{id:string;source_url:string}>();
   const listed=new Set(current.results.map(row=>canonicalJobUrl(row.source_url)));
   const indexes=new Map<string,any>();let checked=0;
@@ -50,6 +50,7 @@ export async function runAutomaticPublishing(db:D1Database,options:{now?:number;
    const found=index.rows.find((entry:any)=>String(entry.id)===row.external_id);if(!found)continue;
    const hydrated=source.kind==='greenhouse'?JSON.parse(await readSource(source.url+'/'+row.external_id,options.fetcher)):found;
    const candidate=candidateFromRow(source,hydrated);if(candidate.discoveryOnly||listed.has(canonicalJobUrl(candidate.job.url)))continue;
+   if(!eligibleEarlyCareer(candidate.job))continue;
    if(locationConflict(candidate.job.details,candidate.job.location)||expiredDeadline(candidate.job.details)){
     await db.prepare('INSERT INTO publishing_holds(collection_id,reason,updated_at) VALUES(?,?,?) ON CONFLICT(collection_id) DO UPDATE SET reason=excluded.reason,updated_at=excluded.updated_at').bind(row.id,'Employer location conflict or expired deadline needs correction.',time).run();continue;
    }

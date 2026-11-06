@@ -48,6 +48,7 @@ export async function claimReel(db:D1Database,now=Date.now()){
  const listing=await db.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();
  if(!listing)return null;
  const job=JSON.parse(listing.data);
+ if(!eligibleReel(job)){await db.prepare("UPDATE social_jobs SET status='excluded',lease_until=0,last_error='Outside the verified 0–3-year audience.' WHERE listing_id=? AND status='rendering'").bind(row.listing_id).run();return null;}
  if(job.deadline!=='Not specified'&&job.deadline<indiaToday()){
   await db.prepare("UPDATE social_jobs SET status='held',last_error='The application deadline has passed.' WHERE listing_id=?").bind(row.listing_id).run();return null;
  }
@@ -98,6 +99,8 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  // Only one invocation may process a particular container at a time.
  const processing=await env.DB.prepare("UPDATE social_jobs SET lease_until=? WHERE listing_id=(SELECT listing_id FROM social_jobs WHERE status='processing' AND lease_until<? ORDER BY created_at LIMIT 1) AND status='processing' AND lease_until<? RETURNING listing_id,container_id").bind(now+120000,now,now).first<{listing_id:string;container_id:string}>();
  if(processing){
+  const current=await env.DB.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(processing.listing_id).first<{data:string}>();
+  if(!current||!eligibleReel(JSON.parse(current.data))){await env.DB.prepare("UPDATE social_jobs SET status='excluded',lease_until=0,last_error='Outside the verified 0–3-year audience.' WHERE listing_id=? AND status='processing'").bind(processing.listing_id).run();return {state:'excluded'};}
   try{
    const state=await graph(processing.container_id+'?fields=status_code');
    if(state.status_code==='FINISHED'){
@@ -138,7 +141,7 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
   stage='source verification';
   const stored=await env.DB.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();if(!stored)throw Error('Listing is unavailable');
   const job={...JSON.parse(stored.data),id:row.listing_id};
-  if(test&&!eligibleReel(job))throw Error('Listing no longer meets the experiment audience');
+  if(!eligibleReel(job))throw Error('Listing no longer meets the experiment audience');
   if((job.deadline!=='Not specified'&&job.deadline<indiaToday())||!await activeEmployer(job,fetcher))throw Error('Employer opening could not be reverified');
   if(!row.media_created_at||now-Date.parse(row.media_created_at)>6*86400000)throw Error('Reel media has expired');
   stage='media creation';

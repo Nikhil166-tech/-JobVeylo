@@ -1,6 +1,16 @@
 type JobFacts={title?:string;experience?:string;details?:string;requirements?:string[]};
 export function experienceBounds(value:string){
- return [...value.matchAll(/\b(\d+)(?:\s*[-–]\s*(\d+)\+?|\+)?\s*(years?|yrs|months?)\b/gi)].map(match=>{const divisor=/month/i.test(match[3])?12:1;return {min:Number(match[1])/divisor,max:match[2]?Number(match[2])/divisor:null}});
+ const numbers:Record<string,string>={zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10'};
+ const normalized=value.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten)\b/gi,v=>numbers[v.toLowerCase()]);
+ return [...normalized.matchAll(/\b(\d+(?:\.\d+)?)(?:\s*(?:[-–—]|to)\s*(\d+(?:\.\d+)?)\+?|\+)?[\s-]*(years?|yrs?|months?)\b/gi)].map(match=>{const divisor=/month/i.test(match[3])?12:1;return {min:Number(match[1])/divisor,max:match[2]?Number(match[2])/divisor:null}});
+}
+export function eligibleEarlyCareer(job:JobFacts){
+ if(/\b(?:senior|sr\.?|principal|staff|lead|manager|director|architect)\b/i.test(job.title||''))return false;
+ const requirements=(job.requirements||[]).filter(line=>!/^topics referenced/i.test(line));
+ const detailLines=(job.details||'').split('\n').filter(line=>/experience|professional|years?\s+(?:of|in|as)\b/i.test(line));
+ const bounds=experienceBounds([job.experience||'',...requirements,...detailLines].join('\n'));
+ if(bounds.some(b=>b.min>3||(b.max!==null&&b.max>3)))return false;
+ return bounds.length>0||careerPriority(job).minimum===0;
 }
 export function careerPriority(job:JobFacts){
  const explicit=job.experience||'';
