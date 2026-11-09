@@ -41,7 +41,7 @@ export async function claimReel(db:D1Database,now=Date.now()){
  const control=await db.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>();
  if(!control?.instagram_enabled)return null;
  const test=await experiment(db);
- if(test){if(!test.enabled||now<test.starts_at||now>=test.ends_at)return null;await prepareReelTest(db,test,now)}
+ if(test){if(!test.enabled||now<test.starts_at||(test.ends_at>0&&now>=test.ends_at))return null;await prepareReelTest(db,test,now)}
  await db.prepare("UPDATE social_jobs SET status='waiting_media',lease_until=0 WHERE status='rendering' AND lease_until<?").bind(now).run();
  const row=await db.prepare("UPDATE social_jobs SET status='rendering',lease_until=? WHERE listing_id=(SELECT s.listing_id FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE s.status='waiting_media' AND l.status='published' ORDER BY CASE WHEN json_extract(l.data,'$.region')='India' THEN 0 ELSE 1 END,s.priority,s.created_at LIMIT 1) AND status='waiting_media' RETURNING listing_id").bind(now+15*60000).first<{listing_id:string}>();
  if(!row)return null;
@@ -87,7 +87,7 @@ export async function runInstagramPublishing(env:SocialEnv,options:{now?:number;
  const control=await env.DB.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>();
  if(!control?.instagram_enabled)return {state:'paused'};
  const test=await experiment(env.DB);
- if(test){if(!test.enabled||now<test.starts_at||now>=test.ends_at)return {state:'test_complete'};await prepareReelTest(env.DB,test,now);if(!reelWindow(now))return {state:'outside_test_window'}}
+ if(test){if(!test.enabled||now<test.starts_at||(test.ends_at>0&&now>=test.ends_at))return {state:'test_complete'};await prepareReelTest(env.DB,test,now);if(!reelWindow(now))return {state:'outside_test_window'}}
  // A terminated request may have reached Meta. Hold it for reconciliation instead of retrying or blocking the entire queue.
  await env.DB.prepare("UPDATE social_jobs SET status='held',last_error='Interrupted Instagram request; reconcile before retrying.',lease_until=0 WHERE status IN ('creating','publishing') AND lease_until<?").bind(now).run();
  const token=instagramToken(env),account=env.INSTAGRAM_ACCOUNT_ID!;

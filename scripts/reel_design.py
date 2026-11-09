@@ -1,5 +1,6 @@
 """JobVeylo's single-screen, mobile-readable reel and original instrumental."""
 from pathlib import Path
+from functools import lru_cache
 import json
 import math
 import re
@@ -12,6 +13,7 @@ W, H, FPS, DURATION = 1080, 1920, 24, 15
 NAVY, WHITE, LIME, MUTED = '#07152F', '#F8FAFF', '#C4FF45', '#AEBDE1'
 
 
+@lru_cache(maxsize=128)
 def font(size, bold=False):
     candidates = [Path('C:/Windows/Fonts') / ('segoeuib.ttf' if bold else 'segoeui.ttf'),
                   Path('/usr/share/fonts/truetype/dejavu') / ('DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')]

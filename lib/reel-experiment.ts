@@ -31,7 +31,7 @@ export async function collectReelTestInsights(env:{DB:D1Database;INSTAGRAM_ACCES
  const test=await experiment(env.DB);if(!test||!env.INSTAGRAM_ACCESS_TOKEN)return {state:'not_configured'};
  const now=options.now??Date.now();
  // Continue measuring final posts for 72 hours after the publishing test ends.
- if(now>test.ends_at+4*86400000)return {state:'complete'};
+ if(test.ends_at>0&&now>test.ends_at+4*86400000)return {state:'complete'};
  const due=await env.DB.prepare("SELECT t.listing_id,s.instagram_id,s.published_at FROM reel_test_jobs t JOIN social_jobs s ON s.listing_id=t.listing_id WHERE s.status='published' AND t.version=?").bind(test.version).all<{listing_id:string;instagram_id:string;published_at:string}>();
  let checked=0;
  for(const row of due.results)for(const age of [24,72]){

@@ -20,3 +20,13 @@ test('strict 0–3 audience rejects higher ranges and rechecks already assigned 
  assert.equal(sqlite.prepare("SELECT status FROM social_jobs WHERE listing_id='old'").get().status,'excluded');
  assert.equal(sqlite.prepare("SELECT status FROM social_jobs WHERE listing_id='valid'").get().status,'media_ready');sqlite.close();
 });
+
+test('continuous schedule uses zero end date and retains three daily windows',async()=>{
+ const {sqlite,db}=setup();const now=Date.parse('2027-02-01T11:00:00+05:30');
+ sqlite.prepare('INSERT INTO reel_experiment(id,starts_at,ends_at) VALUES(1,?,0)').run(now-86400000);
+ seed(sqlite,candidate('ongoing'));await prepareReelTest(db,{starts_at:now-86400000,ends_at:0,enabled:1,version:'reference-screen-v1'},now);
+ assert.equal((await claimReel(db,now)).id,'ongoing');
+ const env={DB:db,REEL_MEDIA:{},INSTAGRAM_ACCESS_TOKEN:'private',INSTAGRAM_ACCOUNT_ID:'123',SITE_URL:'https://example.com'};
+ assert.equal((await runInstagramPublishing(env,{now,startNew:true,fetcher:async()=>{throw Error('must not fetch')}})).state,'outside_test_window');
+ sqlite.close();
+});

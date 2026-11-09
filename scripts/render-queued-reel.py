@@ -1,10 +1,10 @@
-"""Claim one public job, render its single-screen reel and upload it privately."""
+"""Claim one public job, render its public-page reel and upload it privately."""
 from pathlib import Path
 import json, os, sys, tempfile, urllib.request, urllib.error
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT.parents[1]/'.reel-tools'))
-from reel_design import render
+from reel_reference import render_reference as render
 ORIGIN='https://jobveylo.jobveylo.workers.dev'
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
