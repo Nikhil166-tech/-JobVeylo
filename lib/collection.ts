@@ -1,5 +1,5 @@
 import {collectionSources,sourceIndex,candidateFromRow,canonicalJobUrl,readSource,type CollectionSource} from './collection-sources.ts';
-import {careerPriority} from './job-priority.ts';
+import {careerPriority,eligibleEarlyCareer} from './job-priority.ts';
 
 export const maxPendingPerSource=40,maxNewPerSource=4;
 export async function collectionHash(value:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),n=>n.toString(16).padStart(2,'0')).join('')}
@@ -21,6 +21,15 @@ export async function runCollection(db:D1Database,options:{fetcher?:typeof fetch
    let fetched=0,added=0,updated=0,outcome='ok',message='Checked successfully.';
    try{
     const index=sourceIndex(source,await readSource(source.url,options.fetcher));fetched=index.rows.length;
+    // A legacy inbox of experienced roles must not consume every fresher slot.
+    // Retain source data for manual review, and leave government discovery alone.
+    const screening=await db.prepare("SELECT id,data FROM collection_items WHERE source_id=? AND status='pending' AND discovery_only=0 LIMIT ?").bind(source.id,maxPendingPerSource).all<{id:string;data:string}>();
+    let dismissed=0;
+    for(const item of screening.results){
+     const job=JSON.parse(item.data);if(eligibleEarlyCareer(job))continue;
+     const result=await db.prepare("UPDATE collection_items SET status='dismissed' WHERE id=? AND status='pending' AND discovery_only=0").bind(item.id).run();
+     dismissed+=result.meta.changes||0;
+    }
     const existing=await db.prepare('SELECT id,external_id,content_hash,status,listing_id,last_fetched FROM collection_items WHERE source_id=?').bind(source.id).all<{id:string;external_id:string;content_hash:string;status:string;listing_id:string|null;last_fetched:string}>();
     const known=new Map(existing.results.map(row=>[row.external_id,row]));let pending=existing.results.filter(row=>row.status==='pending').length;
     const ordered=[...index.rows.filter(row=>!known.has(String(row.externalId??row.id))),...index.rows.filter(row=>known.has(String(row.externalId??row.id))).sort((a,b)=>(known.get(String(a.externalId??a.id))?.last_fetched||'').localeCompare(known.get(String(b.externalId??b.id))?.last_fetched||''))];
@@ -42,19 +51,21 @@ export async function runCollection(db:D1Database,options:{fetcher?:typeof fetch
      }
      const candidate=candidateFromRow(source,hydrated);
      if(!candidate.discoveryOnly&&listed.has(candidate.job.url))continue;
+     const status=candidate.discoveryOnly||eligibleEarlyCareer(candidate.job)?'pending':'dismissed';
      const hash=await collectionHash(JSON.stringify({...candidate.job,checked:''}));
      if(old?.content_hash===hash){await db.prepare('UPDATE collection_items SET last_fetched=? WHERE id=?').bind(started,old.id).run();continue}
      const id=old?.id||'col-'+await collectionHash(source.id+'|'+externalId);
      const dedupe=await collectionHash(candidate.discoveryOnly?source.id+'|'+externalId:candidate.job.url);
-     const saved=await db.prepare(`INSERT INTO collection_items(id,source_id,external_id,dedupe_key,data,content_hash,discovery_only,first_seen,last_seen,changed_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_id,external_id) DO UPDATE SET data=excluded.data,content_hash=excluded.content_hash,last_seen=excluded.last_seen,changed_at=excluded.changed_at,missing_count=0 WHERE collection_items.status='pending' ON CONFLICT DO NOTHING RETURNING id`)
-      .bind(id,source.id,externalId,dedupe,JSON.stringify(candidate.job),hash,candidate.discoveryOnly?1:0,started,started,started).first();
-     if(saved){if(old)updated++;else{added++;pending++}}
+     const saved=await db.prepare(`INSERT INTO collection_items(id,source_id,external_id,dedupe_key,data,content_hash,status,discovery_only,first_seen,last_seen,changed_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_id,external_id) DO UPDATE SET data=excluded.data,content_hash=excluded.content_hash,status=excluded.status,last_seen=excluded.last_seen,changed_at=excluded.changed_at,missing_count=0 WHERE collection_items.status='pending' ON CONFLICT DO NOTHING RETURNING id`)
+      .bind(id,source.id,externalId,dedupe,JSON.stringify(candidate.job),hash,status,candidate.discoveryOnly?1:0,started,started,started).first();
+     if(saved){if(old){updated++;if(status==='dismissed')pending--}else{added++;if(status==='pending')pending++}if(status==='dismissed')dismissed++}
      if(saved)await db.prepare('UPDATE collection_items SET last_fetched=? WHERE id=?').bind(started,id).run();
     }
     if(index.complete)await db.prepare('UPDATE collection_items SET missing_count=CASE WHEN external_id IN(SELECT value FROM json_each(?)) THEN 0 ELSE MIN(missing_count+1,10) END,last_seen=CASE WHEN external_id IN(SELECT value FROM json_each(?)) THEN ? ELSE last_seen END WHERE source_id=?').bind(JSON.stringify(index.activeIds),JSON.stringify(index.activeIds),started,source.id).run();
     await db.prepare('UPDATE collection_sources SET last_checked=?,last_success=?,last_error=NULL,last_count=?,failures=0,next_check=? WHERE id=?').bind(started,started,fetched,now+25*60000,source.id).run();
     if(pending>=maxPendingPerSource)message='Review inbox is full for this source. New collection resumes when items are reviewed.';
+    if(dismissed)message+=' '+dismissed+' items outside fresher eligibility were retained as dismissed.';
    }catch(error){
     outcome='error';message=error instanceof Error?error.message.slice(0,250):'Collection failed. No publication was attempted.';
     const delay=/blocks|rate.limits/.test(message)?6*3600000:Math.min(12*3600000,1800000*2**Math.min(state.failures,4));

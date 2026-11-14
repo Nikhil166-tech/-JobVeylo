@@ -13,7 +13,7 @@ def capture_job_page(job, destination):
     url = ORIGIN + '/jobs/' + job_id
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={'width': 1440, 'height': 960}, device_scale_factor=1.5,
+        context = browser.new_context(viewport={'width': 1440, 'height': 1600}, device_scale_factor=1.5,
                                       reduced_motion='reduce', service_workers='block')
         # Public read-only page capture: no sign-in, cookies, API key or clicks.
         page = context.new_page()
@@ -27,6 +27,9 @@ def capture_job_page(job, destination):
         if str(job['company']) not in overview or str(job['experience']) not in overview:
             raise RuntimeError('Public job facts changed; reel not rendered')
         page.evaluate('document.fonts.ready')
+        # Keep long titles inside the portrait camera crop, retaining the
+        # desktop navigation and all original text. Only line wrapping changes.
+        page.locator('h1').evaluate("element => { element.style.maxWidth = '560px'; }")
         # Screenshot the real public page at its normal top position.
         page.screenshot(path=str(destination), full_page=False, animations='disabled')
         browser.close()

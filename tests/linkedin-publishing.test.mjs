@@ -36,7 +36,14 @@ test('schedules junior first, one slot once, and never duplicates an already sch
  assert.match(calls[0],/mode:customScheduled/);assert.equal(sqlite.prepare("SELECT status FROM linkedin_jobs WHERE listing_id='junior'").get().status,'scheduled');
  assert.equal((await runLinkedInPublishing(env,{now,fetcher})).state,'already_checked');assert.equal(calls.length,1);
  sqlite.prepare("UPDATE linkedin_jobs SET status='sent' WHERE listing_id='junior'").run();
- const later=await runLinkedInPublishing(env,{now:now+1800000,fetcher});assert.equal(later.id,'senior');assert.equal(calls.filter(q=>q.includes('createPost')).length,2);sqlite.close();
+ const later=await runLinkedInPublishing(env,{now:now+1800000,fetcher});assert.equal(later.state,'empty');assert.equal(calls.filter(q=>q.includes('createPost')).length,1);sqlite.close();
+});
+test('experienced roles already waiting are excluded before any source or Buffer request',async()=>{
+ const {sqlite,env,now}=setup();insert(sqlite,job('experienced','2+ years'));
+ sqlite.prepare("INSERT INTO linkedin_jobs(listing_id,priority,created_at) VALUES('experienced',0,'now')").run();
+ let calls=0;const fetcher=async()=>{calls++;throw Error('Must not contact employer or Buffer')};
+ assert.equal((await runLinkedInPublishing(env,{now,fetcher})).state,'empty');
+ assert.equal(calls,0);assert.equal(sqlite.prepare("SELECT status FROM linkedin_jobs WHERE listing_id='experienced'").get().status,'excluded');sqlite.close();
 });
 test('missing employer opening is held without a Buffer mutation',async()=>{
  const {sqlite,env,now}=setup();insert(sqlite,job('junior'));const calls=[];assert.equal((await runLinkedInPublishing(env,{now,fetcher:mock(calls,{active:[]})})).state,'empty');assert.equal(calls.length,0);assert.equal(sqlite.prepare('SELECT status FROM linkedin_jobs').get().status,'held');sqlite.close();

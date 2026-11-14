@@ -6,6 +6,7 @@ import {collectionSources,sourceIndex,candidateFromRow,canonicalJobUrl,readSourc
 import {runCollection} from '../lib/collection.ts';
 const source=collectionSources[0];
 const posting=(id='one')=>({id,title:'Software Engineer '+id,isListed:true,descriptionPlain:'Build production Python APIs and tested data workflows.\nRequirements\n2 years of professional software engineering experience.\nBachelor degree in computer science.',location:'Bengaluru, India',jobUrl:'https://jobs.ashbyhq.com/aiprise/'+id,isRemote:false,publishedAt:'2026-10-24'});
+const fresherPosting=(id='new')=>({...posting(id),descriptionPlain:posting(id).descriptionPlain.replace('2 years','0 years')});
 const feed=(rows)=>async()=>new Response(JSON.stringify({jobs:rows}),{headers:{'Content-Type':'application/json'}});
 function database(){
  const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync('cloudflare/migrations/0001_initial.sql','utf8'));sqlite.exec(readFileSync('cloudflare/migrations/0002_collection.sql','utf8'));
@@ -41,10 +42,47 @@ test('collection is idempotent, skips existing published links and never publish
  assert.equal(JSON.parse(sqlite.prepare('SELECT data FROM collection_items').get().data).status,'draft');
 });
 test('caps each run and inbox, honours pause and uses a lease to prevent overlapping writes',async()=>{
- const {db,sqlite}=database(),rows=Array.from({length:50},(_,i)=>posting(String(i)));
+ const {db,sqlite}=database(),rows=Array.from({length:50},(_,i)=>fresherPosting(String(i)));
  for(let i=0;i<11;i++)await runCollection(db,{sourceId:source.id,fetcher:feed(rows),force:true});assert.equal(sqlite.prepare('SELECT count(*) AS n FROM collection_items').get().n,40);
  sqlite.prepare('UPDATE collection_control SET enabled=0').run();let calls=0;const r=await runCollection(db,{fetcher:async()=>{calls++;return new Response('')}});assert.equal(r.state,'skipped');assert.equal(calls,0);
  sqlite.prepare('UPDATE collection_control SET enabled=1,lease_until=?').run(Date.now()+60000);assert.equal((await runCollection(db,{fetcher:feed(rows)})).state,'skipped');
+});
+test('a full experienced inbox is retained as dismissed and frees room for new freshers',async()=>{
+ const {db,sqlite}=database(),oldRows=Array.from({length:40},(_,i)=>posting('old-'+i));
+ const insert=sqlite.prepare('INSERT INTO collection_items(id,source_id,external_id,dedupe_key,data,content_hash,first_seen,last_seen,changed_at) VALUES(?,?,?,?,?,?,?,?,?)');
+ for(const row of oldRows)insert.run('seed-'+row.id,source.id,row.id,row.jobUrl,JSON.stringify(candidateFromRow(source,row).job),'seed','2026-10-24','2026-10-24','2026-10-24');
+ const oldData=sqlite.prepare("SELECT data FROM collection_items WHERE id='seed-old-0'").get().data;
+ const result=await runCollection(db,{sourceId:source.id,fetcher:feed([...oldRows,fresherPosting('fresher')]),force:true});
+ assert.equal(result.results[0].added,1);
+ assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='pending'").get().n,1);
+ assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='dismissed'").get().n,40);
+ assert.equal(sqlite.prepare("SELECT data FROM collection_items WHERE id='seed-old-0'").get().data,oldData);
+ assert.equal(sqlite.prepare("SELECT status FROM collection_items WHERE external_id='fresher'").get().status,'pending');
+ assert.match(result.results[0].message,/40 items outside fresher eligibility/);
+});
+test('rejected source jobs do not repeat hydration or rewrite imported and dismissed records',async()=>{
+ const {db,sqlite}=database(),greenhouse=collectionSources.find(s=>s.kind==='greenhouse');
+ const row=id=>({id,title:'Software Engineer',absolute_url:'https://boards.greenhouse.io/cloudflare/jobs/'+id,location:{name:'Bengaluru, India'},content:'<p>Build tested production services.</p><p>5 years of professional engineering experience required.</p>'});
+ const insert=sqlite.prepare('INSERT INTO collection_items(id,source_id,external_id,dedupe_key,data,content_hash,status,first_seen,last_seen,changed_at,last_fetched) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
+ for(const [id,status] of [[90,'imported'],[91,'dismissed']])insert.run('preserved-'+id,greenhouse.id,String(id),'saved-'+id,JSON.stringify({title:'Keep original '+id}),'original',status,'old','old','old','original-fetch');
+ const rows=[row(90),row(91),...Array.from({length:6},(_,i)=>row(i+1))];
+ const hydrated=[];const fetcher=async url=>{const match=String(url).match(/\/jobs\/(\d+)$/);if(match){hydrated.push(Number(match[1]));return new Response(JSON.stringify(row(Number(match[1]))))}return new Response(JSON.stringify({jobs:rows}))};
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,4);
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,6);assert.equal(new Set(hydrated).size,6);
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,6);
+ assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='pending'").get().n,0);
+ assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='dismissed'").get().n,7);
+ for(const [id,status] of [[90,'imported'],[91,'dismissed']]){
+  const saved=sqlite.prepare('SELECT status,data,content_hash,changed_at,last_fetched FROM collection_items WHERE id=?').get('preserved-'+id);
+  assert.deepEqual({...saved},{status,data:JSON.stringify({title:'Keep original '+id}),content_hash:'original',changed_at:'old',last_fetched:'original-fetch'});
+ }
+});
+test('government discovery remains in the manual inbox without verified fresher eligibility',async()=>{
+ const {db,sqlite}=database(),govt=collectionSources.find(s=>s.kind==='employment');
+ const html='<table><tr><td>01/01/2026</td><td>Example Authority</td><td>Engineer</td><td>Recruitment</td><td>31/12/2099</td></tr></table>';
+ for(let i=0;i<2;i++)await runCollection(db,{sourceId:govt.id,fetcher:async()=>new Response(html),force:true});
+ const items=sqlite.prepare('SELECT status,discovery_only,data FROM collection_items').all();
+ assert.equal(items.length,1);assert.equal(items[0].status,'pending');assert.equal(items[0].discovery_only,1);assert.equal(JSON.parse(items[0].data).experience,'Not specified');
 });
 test('source errors back off and two successful missing checks flag an opening without deleting listings',async()=>{
  const {db,sqlite}=database();await runCollection(db,{sourceId:source.id,fetcher:feed([posting()]),force:true});

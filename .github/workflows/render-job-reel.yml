@@ -1,6 +1,12 @@
 name: Render queued JobVeylo reel
 on:
   workflow_dispatch:
+    inputs:
+      preview_job_id:
+        description: 'Optional public job ID for a render-only diagnostic (never uploads or publishes)'
+        required: false
+        default: ''
+        type: string
   schedule:
     - cron: '30 2,6,12 * * *'
 permissions:
@@ -10,7 +16,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   render:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 supports Ubuntu 24.04; ubuntu-latest now selects 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       JOBVEYLO_AUTOMATION_KEY: ${{ secrets.JOBVEYLO_AUTOMATION_KEY }}
@@ -20,11 +27,16 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install media dependencies
-        if: env.JOBVEYLO_AUTOMATION_KEY != ''
+        if: env.JOBVEYLO_AUTOMATION_KEY != '' || inputs.preview_job_id != ''
         run: python -m pip install Pillow==12.0.0 imageio-ffmpeg==0.6.0 playwright==1.56.0
       - name: Install headless page capture
-        if: env.JOBVEYLO_AUTOMATION_KEY != ''
+        if: env.JOBVEYLO_AUTOMATION_KEY != '' || inputs.preview_job_id != ''
         run: python -m playwright install --with-deps chromium
       - name: Render one queued job
-        if: env.JOBVEYLO_AUTOMATION_KEY != ''
+        if: env.JOBVEYLO_AUTOMATION_KEY != '' && inputs.preview_job_id == ''
         run: python scripts/render-queued-reel.py
+      - name: Verify public-page rendering without publishing
+        if: inputs.preview_job_id != ''
+        env:
+          JOBVEYLO_PREVIEW_ID: ${{ inputs.preview_job_id }}
+        run: python scripts/render-queued-reel.py --public-preview "$JOBVEYLO_PREVIEW_ID"

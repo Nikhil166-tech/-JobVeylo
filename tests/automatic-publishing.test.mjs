@@ -32,9 +32,9 @@ test('recognises explicit conflicting cities and expired application dates',()=>
  assert.equal(expiredDeadline('Application Deadline: January 15, 2026','2026-10-25'),true);
  assert.equal(expiredDeadline('Application Deadline: ~January 2027','2026-10-25'),false);
 });
-test('publishes the early-career job first, once per half hour, and enqueues one reel',async()=>{
- const {db,sqlite}=database(),senior=row('senior','8+'),early=row('early','1-3');queue(sqlite,senior,'a');queue(sqlite,early,'b');
- const fetcher=async()=>Response.json({jobs:[senior,early]});const now=Date.now();
+test('publishes only a fresher job, once per half hour, and enqueues one reel',async()=>{
+ const {db,sqlite}=database(),senior=row('senior','8+'),early=row('early','0-3'),experienced=row('experienced','1-3');queue(sqlite,senior,'a');queue(sqlite,early,'b');queue(sqlite,experienced,'f');
+ const fetcher=async()=>Response.json({jobs:[senior,early,experienced]});const now=Date.now();
  assert.equal((await runAutomaticPublishing(db,{now,fetcher})).state,'published');
  assert.match(sqlite.prepare('SELECT data FROM listings').get().data,/Software Engineer early/);
  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM social_jobs').get().n,1);

@@ -1,5 +1,5 @@
 import {activeEmployer,reelHashtags} from './instagram-publishing.ts';
-import {careerPriority} from './job-priority.ts';
+import {careerPriority,eligibleEarlyCareer} from './job-priority.ts';
 import {indiaToday} from './collection-sources.ts';
 import {campaignLink} from './traffic-links.ts';
 
@@ -100,7 +100,7 @@ async function publishSlot(env:LinkedInEnv,options:{fetcher?:typeof fetch;now?:n
  if((outstanding?.n||0)>=8)return {state:'queue_buffered'};
  // Seed public listings only; priority is shared with website/Instagram. Each listing is permanently deduplicated.
  const listings=await env.DB.prepare("SELECT l.id,l.data,l.updated_at FROM listings l LEFT JOIN linkedin_jobs s ON s.listing_id=l.id WHERE l.status='published' AND s.listing_id IS NULL").all<{id:string;data:string;updated_at:string}>();
- for(const row of listings.results){const job=JSON.parse(row.data);await env.DB.prepare('INSERT INTO linkedin_jobs(listing_id,priority,created_at) VALUES(?,?,?) ON CONFLICT DO NOTHING').bind(row.id,careerPriority(job).rank,row.updated_at).run()}
+ for(const row of listings.results){const job=JSON.parse(row.data);if(!eligibleEarlyCareer(job))continue;await env.DB.prepare('INSERT INTO linkedin_jobs(listing_id,priority,created_at) VALUES(?,?,?) ON CONFLICT DO NOTHING').bind(row.id,careerPriority(job).rank,row.updated_at).run()}
  const latest=await env.DB.prepare("SELECT MAX(due_at) AS latest FROM linkedin_jobs WHERE status IN ('scheduled','sent','creating','held') AND due_at IS NOT NULL").first<{latest:string|null}>();
  // Small cron timing differences should move the due time, not skip every second slot.
  const due=new Date(Math.max(now+120000,latest?.latest?Date.parse(latest.latest)+1800000:0)).toISOString();
@@ -114,6 +114,7 @@ async function publishSlot(env:LinkedInEnv,options:{fetcher?:typeof fetch;now?:n
  try{
   const stored=await env.DB.prepare("SELECT data FROM listings WHERE id=? AND status='published'").bind(row.listing_id).first<{data:string}>();if(!stored)throw Error('Unavailable');
   const job={...JSON.parse(stored.data),id:row.listing_id};
+  if(!eligibleEarlyCareer(job)){await env.DB.prepare("UPDATE linkedin_jobs SET status='excluded',lease_until=0,last_error='Outside the verified fresher-only audience.' WHERE listing_id=? AND status='creating'").bind(row.listing_id).run();continue;}
   if(job.deadline&&job.deadline!=='Not specified'&&job.deadline<indiaToday())throw Error('Expired');
   if(!await activeEmployer(job,fetcher))throw Error('Source unavailable');
   const allowed=await env.DB.prepare('SELECT enabled FROM linkedin_control WHERE id=1').first<{enabled:number}>();if(!allowed?.enabled)throw Error('Paused');

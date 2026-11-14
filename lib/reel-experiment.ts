@@ -16,7 +16,7 @@ export async function prepareReelTest(db:D1Database,test:ReelExperiment,now=Date
  const rows=await db.prepare("SELECT s.listing_id,l.data,t.listing_id AS assigned FROM social_jobs s JOIN listings l ON l.id=s.listing_id LEFT JOIN reel_test_jobs t ON t.listing_id=s.listing_id WHERE s.status IN ('waiting_media','rendering','media_ready','creating','processing') AND l.status='published' ORDER BY s.priority,s.created_at LIMIT 300").all<{listing_id:string;data:string;assigned:string|null}>();
  for(const row of rows.results){
   const job=JSON.parse(row.data);
-  if(!eligibleReel(job)){await db.prepare("UPDATE social_jobs SET status='excluded',last_error='Outside the verified 0–3-year / internship audience.',lease_until=0 WHERE listing_id=? AND status NOT IN ('published','publishing')").bind(row.listing_id).run();continue}
+  if(!eligibleReel(job)){await db.prepare("UPDATE social_jobs SET status='excluded',last_error='Fresher eligibility is not verified; prior work experience must not be mandatory.',lease_until=0 WHERE listing_id=? AND status NOT IN ('published','publishing')").bind(row.listing_id).run();continue}
   if(row.assigned)continue;
   const stratum=(job.region==='India'?'India':'Overseas')+(/\bintern(?:ship)?\b/i.test(job.title)?' internship':' early career');
   const count=await db.prepare('SELECT COUNT(*) AS n FROM reel_test_jobs WHERE version=? AND stratum=?').bind(test.version,stratum).first<{n:number}>();
