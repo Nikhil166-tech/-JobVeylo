@@ -11,6 +11,8 @@ export const collectionSources=[
  {id:'ashby-sarvam',label:'Sarvam AI · Official Ashby board',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/sarvam?includeCompensation=true',company:'Sarvam AI'},
  {id:'lever-sprinto',label:'Sprinto · Official Lever board',kind:'lever',url:'https://api.lever.co/v0/postings/Sprinto?mode=json',company:'Sprinto'},
  {id:'greenhouse-twilio',label:'Twilio · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/twilio/jobs',company:'Twilio'},
+ {id:'lever-hevo',label:'Hevo Data · Official Lever board',kind:'lever',url:'https://api.lever.co/v0/postings/hevodata?mode=json',company:'Hevo Data'},
+ {id:'ashby-airbound',label:'Airbound · Official Ashby board',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/airbound?includeCompensation=true',company:'Airbound'},
  {id:'employment-news',label:'Employment News · Government discovery',kind:'employment',url:'https://employmentnews.gov.in/newemp/AllJobs.aspx?k=All',company:'Employment News'},
  {id:'upsc-notices',label:'UPSC · Official recruitment notices',kind:'upsc',url:'https://upsc.gov.in/recruitment/recruitment-advertisement',company:'UPSC'},
 ] as const;

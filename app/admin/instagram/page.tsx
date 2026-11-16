@@ -9,8 +9,25 @@ export default async function InstagramSetup(){
  await requireEditor();const env=bindings();
  const rows=await env.DB.prepare('SELECT status,COUNT(*) AS total FROM social_jobs GROUP BY status').all<{status:string;total:number}>();
  const recent=await env.DB.prepare('SELECT listing_id,status,last_error,published_at FROM social_jobs ORDER BY COALESCE(published_at,created_at) DESC LIMIT 12').all<{listing_id:string;status:string;last_error:string|null;published_at:string|null}>();
+ const [control,schedule,latest,active]=await Promise.all([
+  env.DB.prepare('SELECT instagram_enabled FROM publishing_control WHERE id=1').first<{instagram_enabled:number}>(),
+  env.DB.prepare('SELECT starts_at,ends_at,enabled FROM reel_experiment WHERE id=1').first<{starts_at:number;ends_at:number;enabled:number}>(),
+  env.DB.prepare("SELECT listing_id,published_at FROM social_jobs WHERE status='published' AND instagram_id IS NOT NULL AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT 1").first<{listing_id:string;published_at:string}>(),
+  env.DB.prepare("SELECT s.status,COUNT(*) AS total FROM social_jobs s JOIN listings l ON l.id=s.listing_id WHERE l.status='published' AND s.status IN ('waiting_media','rendering','media_ready','creating','processing','publishing') GROUP BY s.status").all<{status:string;total:number}>(),
+ ]);
+ const now=Date.now(),paused=!control?.instagram_enabled||!!schedule&&(!schedule.enabled||schedule.ends_at>0&&now>=schedule.ends_at);
+ const notStarted=!!schedule&&now<schedule.starts_at;
+ const count=(status:string)=>active.results.find(row=>row.status===status)?.total||0;
+ const inProgress=['rendering','creating','processing','publishing'].reduce((total,status)=>total+count(status),0);
+ const queueMessage=inProgress?`${inProgress} reel${inProgress===1?' is':'s are'} being prepared or processed.`:count('media_ready')?`${count('media_ready')} reel${count('media_ready')===1?' is':'s are'} ready for a scheduled publishing window.`:count('waiting_media')?`${count('waiting_media')} job${count('waiting_media')===1?' is':'s are'} waiting for video rendering.`:'Waiting for a new eligible fresher opportunity. The active reel queue is empty; this alone does not indicate a publishing failure. Eligible jobs will enter the scheduled workflow as they become available.';
  const configured=[['REEL_MEDIA storage',!!env.REEL_MEDIA],['Renderer connection',!!env.JOBVEYLO_AUTOMATION_KEY||!!await env.REEL_MEDIA?.get('automation/renderer-key-hash')],['INSTAGRAM_ACCESS_TOKEN',!!env.INSTAGRAM_ACCESS_TOKEN],['INSTAGRAM_ACCOUNT_ID',!!env.INSTAGRAM_ACCOUNT_ID]];
  return <><Header/><main><div className="page-head"><div className="wrap"><a className="breadcrumb" href="/admin">Owner dashboard /</a><h1>Instagram publishing</h1><p className="sub">One job per reel. Only verified opportunities accepting freshers. Up to three reels daily at 9 AM, 1 PM and 7 PM IST.</p></div></div><article className="article">
+  <section aria-label="Current publishing status">
+   <h2>{paused?'Automatic publishing paused':notStarted?'Automatic publishing scheduled':'Automatic publishing enabled'}</h2>
+   <p>{paused?'New reels will not publish while the publishing controls or schedule are paused.':notStarted?'The configured publishing schedule has not started yet.':queueMessage}</p>
+   {latest?<p>Latest confirmed reel: <a href={'/jobs/'+latest.listing_id}><time dateTime={latest.published_at}>{new Date(latest.published_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} IST</time></a>.</p>:<p>No confirmed Instagram publication is recorded yet.</p>}
+   <p>Held and excluded items are listed separately below. A scheduled slot is skipped when no eligible reel is ready.</p>
+  </section>
   <h2>{instagramReady(env)?'Publishing credentials configured':'One-time connection required'}</h2>
   <p>Website publishing works independently. Direct Instagram delivery needs a professional @jobveylo account, its authorised publishing token and the hosted renderer. The Metricool chat connection does not supply those server credentials.</p>
   <ul>{configured.map(([name,ready])=><li key={String(name)}>{String(name)}: <b>{ready?'Configured':'Not configured'}</b></li>)}</ul>
