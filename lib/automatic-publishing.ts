@@ -48,7 +48,14 @@ export async function runAutomaticPublishing(db:D1Database,options:{now?:number;
    if(!indexes.has(source.id)){try{indexes.set(source.id,sourceIndex(source,await readSource(source.url,options.fetcher)))}catch{indexes.set(source.id,null)}}
    const index=indexes.get(source.id);if(!index)continue;
    const found=index.rows.find((entry:any)=>String(entry.id)===row.external_id);if(!found)continue;
-   const hydrated=source.kind==='greenhouse'?JSON.parse(await readSource(source.url+'/'+row.external_id,options.fetcher)):found;
+   // `content=true` Greenhouse boards already carry the verified role text.
+   // Only legacy no-content feeds need an individual-role request; strip the
+   // query before appending the identifier so the fallback remains valid.
+   let hydrated=found;
+   if(source.kind==='greenhouse'&&!(typeof found.content==='string'&&found.content.trim())){
+    const endpoint=new URL(source.url);endpoint.search='';endpoint.pathname=endpoint.pathname.replace(/\/$/,'')+'/'+row.external_id;
+    hydrated=JSON.parse(await readSource(endpoint.href,options.fetcher));
+   }
    const candidate=candidateFromRow(source,hydrated);if(candidate.discoveryOnly||listed.has(canonicalJobUrl(candidate.job.url)))continue;
    if(!eligibleEarlyCareer(candidate.job))continue;
    if(locationConflict(candidate.job.details,candidate.job.location)||expiredDeadline(candidate.job.details)){
