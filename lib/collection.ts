@@ -45,9 +45,14 @@ export async function runCollection(db:D1Database,options:{fetcher?:typeof fetch
      }
      if(processed++>=maxNewPerSource)break;
      let hydrated=row;
-     if(source.kind==='greenhouse'){
+     // Greenhouse's `content=true` board feed already contains the complete
+     // description. Avoid making a malformed `?content=true/<id>` request and
+     // screen the source evidence directly. Older/no-content feeds retain the
+     // bounded per-job hydration fallback.
+     if(source.kind==='greenhouse'&&!(typeof row.content==='string'&&row.content.trim())){
       if(!/^\d+$/.test(externalId))continue;
-      hydrated=JSON.parse(await readSource(source.url+'/'+externalId,options.fetcher));
+      const endpoint=new URL(source.url);endpoint.search='';endpoint.pathname=endpoint.pathname.replace(/\/$/,'')+'/'+externalId;
+      hydrated=JSON.parse(await readSource(endpoint.href,options.fetcher));
      }
      const candidate=candidateFromRow(source,hydrated);
      if(!candidate.discoveryOnly&&listed.has(candidate.job.url))continue;

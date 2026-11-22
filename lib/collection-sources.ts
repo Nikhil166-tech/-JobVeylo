@@ -6,13 +6,15 @@ import {sourcePriorityHint,experienceClauses,explicitFresherWording} from './job
 export const collectionSources=[
  {id:'ashby-aiprise',label:'AiPrise · Ashby',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/aiprise?includeCompensation=true',company:'AiPrise'},
  {id:'lever-safe',label:'Safe Security · Lever',kind:'lever',url:'https://api.lever.co/v0/postings/safe?mode=json',company:'Safe Security'},
- {id:'greenhouse-cloudflare',label:'Cloudflare · Greenhouse',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs',company:'Cloudflare'},
- {id:'greenhouse-razorpay',label:'Razorpay · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/razorpaysoftwareprivatelimited/jobs',company:'Razorpay'},
+ {id:'greenhouse-cloudflare',label:'Cloudflare · Greenhouse',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs?content=true',company:'Cloudflare'},
+ {id:'greenhouse-razorpay',label:'Razorpay · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/razorpaysoftwareprivatelimited/jobs?content=true',company:'Razorpay'},
  {id:'ashby-sarvam',label:'Sarvam AI · Official Ashby board',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/sarvam?includeCompensation=true',company:'Sarvam AI'},
  {id:'lever-sprinto',label:'Sprinto · Official Lever board',kind:'lever',url:'https://api.lever.co/v0/postings/Sprinto?mode=json',company:'Sprinto'},
- {id:'greenhouse-twilio',label:'Twilio · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/twilio/jobs',company:'Twilio'},
+ {id:'greenhouse-twilio',label:'Twilio · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/twilio/jobs?content=true',company:'Twilio'},
  {id:'lever-hevo',label:'Hevo Data · Official Lever board',kind:'lever',url:'https://api.lever.co/v0/postings/hevodata?mode=json',company:'Hevo Data'},
  {id:'ashby-airbound',label:'Airbound · Official Ashby board',kind:'ashby',url:'https://api.ashbyhq.com/posting-api/job-board/airbound?includeCompensation=true',company:'Airbound'},
+ {id:'greenhouse-instalily',label:'InstaLILY · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/instalilyai/jobs?content=true',company:'InstaLILY'},
+ {id:'greenhouse-alarm',label:'Alarm.com · Official Greenhouse board',kind:'greenhouse',url:'https://boards-api.greenhouse.io/v1/boards/alarmcom/jobs?content=true',company:'Alarm.com'},
  {id:'employment-news',label:'Employment News · Government discovery',kind:'employment',url:'https://employmentnews.gov.in/newemp/AllJobs.aspx?k=All',company:'Employment News'},
  {id:'upsc-notices',label:'UPSC · Official recruitment notices',kind:'upsc',url:'https://upsc.gov.in/recruitment/recruitment-advertisement',company:'UPSC'},
 ] as const;

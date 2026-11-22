@@ -66,10 +66,12 @@ test('rejected source jobs do not repeat hydration or rewrite imported and dismi
  const insert=sqlite.prepare('INSERT INTO collection_items(id,source_id,external_id,dedupe_key,data,content_hash,status,first_seen,last_seen,changed_at,last_fetched) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
  for(const [id,status] of [[90,'imported'],[91,'dismissed']])insert.run('preserved-'+id,greenhouse.id,String(id),'saved-'+id,JSON.stringify({title:'Keep original '+id}),'original',status,'old','old','old','original-fetch');
  const rows=[row(90),row(91),...Array.from({length:6},(_,i)=>row(i+1))];
- const hydrated=[];const fetcher=async url=>{const match=String(url).match(/\/jobs\/(\d+)$/);if(match){hydrated.push(Number(match[1]));return new Response(JSON.stringify(row(Number(match[1]))))}return new Response(JSON.stringify({jobs:rows}))};
- await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,4);
- await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,6);assert.equal(new Set(hydrated).size,6);
- await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,6);
+ const hydrated=[];const fetcher=async url=>{const match=String(url).match(/\/jobs\/(\d+)(?:\?.*)?$/);if(match){hydrated.push(Number(match[1]));return new Response(JSON.stringify(row(Number(match[1]))))}return new Response(JSON.stringify({jobs:rows}))};
+ // Greenhouse feeds now include full content, so clearly ineligible roles are
+ // screened before individual-job hydration.
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,0);
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,0);
+ await runCollection(db,{sourceId:greenhouse.id,fetcher,force:true});assert.equal(hydrated.length,0);
  assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='pending'").get().n,0);
  assert.equal(sqlite.prepare("SELECT count(*) AS n FROM collection_items WHERE status='dismissed'").get().n,7);
  for(const [id,status] of [[90,'imported'],[91,'dismissed']]){
