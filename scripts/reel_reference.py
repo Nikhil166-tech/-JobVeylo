@@ -7,6 +7,20 @@ from reel_design import W,H,FPS,DURATION,fit,music
 DESIGN_VERSION='desktop-closeup-v2'
 
 
+def reel_location(value):
+    """Keep the factual city list readable inside the single-screen reel card."""
+    primary=str(value or 'See employer location').split(' · ',1)[0].strip()
+    places=[]
+    for part in re.split(r'\s*[;|]\s*',primary):
+        part=' '.join(part.split()).strip()
+        if part and part.lower() not in {item.lower() for item in places}:
+            places.append(part)
+    text=' + '.join(places[:2]) or 'See employer location'
+    # The complete employer-stated geography stays on the linked JobVeylo page.
+    # A factual generic label is clearer than clipping an unreadable third city.
+    return text if len(text)<=52 else 'Multiple locations — see job page'
+
+
 def overlay(job, second):
     image=Image.new('RGBA',(W,H),(0,0,0,0))
     draw=ImageDraw.Draw(image);records=[]
@@ -24,10 +38,10 @@ def overlay(job, second):
         explicit_fresher=re.search(r'freshers?|no\s+(?:(?:prior|previous|professional|work|industry)\s+)*experience|experience\s+(?:is\s+)?not\s+(?:required|necessary|needed)|(?:new|recent)[ -]?grad',experience,re.I)
         if explicit_fresher or (amount and re.match(r'0(?:\s|[-–—+])',amount.group())):experience='Freshers can apply'
         else:raise ValueError('Only source-confirmed fresher opportunities may be rendered')
-        location=' · '.join(dict.fromkeys(str(job.get('location') or 'See employer location').split(' · ')))
+        location=reel_location(job.get('location'))
         draw.rounded_rectangle((155,1330,900,1495),22,fill=(20,24,29,255))
         fit(draw,experience.upper(),(180,1352,875,1415),size=55,minimum=28,bold=True,color='white',align='center',records=records,name='experience')
-        fit(draw,location,(180,1430,875,1480),size=33,minimum=24,color='#E0E5E8',align='center',records=records,name='location')
+        fit(draw,location,(180,1422,875,1490),size=33,minimum=24,color='#E0E5E8',align='center',records=records,name='location')
     if any(record['clipped'] for record in records):
         raise ValueError('Overlay text does not fit; do not publish')
     return image
