@@ -34,9 +34,12 @@ def overlay(job, second):
             raise ValueError('Verified fresher eligibility is required before rendering')
         # Eligibility is checked against the full source by the hosted queue.
         # Keep the factual experience range short enough for the approved card.
-        amount=re.search(r'\b\d+(?:\.\d+)?(?:\s*[-–—]\s*\d+(?:\.\d+)?\+?|\+)?[\s-]*(?:years?|yrs?|months?)\b',experience,re.I)
+        # Employer feeds commonly use either “0–2 years” or “0 to 2 years”.
+        # Both explicitly include freshers, and the verified queue has already
+        # rejected roles where prior experience is mandatory.
+        amount=re.search(r'\b\d+(?:\.\d+)?(?:\s*(?:[-–—]|to)\s*\d+(?:\.\d+)?\+?|\+)?\s*(?:years?|yrs?|months?)\b',experience,re.I)
         explicit_fresher=re.search(r'freshers?|no\s+(?:(?:prior|previous|professional|work|industry)\s+)*experience|experience\s+(?:is\s+)?not\s+(?:required|necessary|needed)|(?:new|recent)[ -]?grad',experience,re.I)
-        if explicit_fresher or (amount and re.match(r'0(?:\s|[-–—+])',amount.group())):experience='Freshers can apply'
+        if explicit_fresher or (amount and re.match(r'0(?:\s*(?:[-–—+]|to)|\s+)',amount.group(),re.I)):experience='Freshers can apply'
         else:raise ValueError('Only source-confirmed fresher opportunities may be rendered')
         location=reel_location(job.get('location'))
         draw.rounded_rectangle((155,1330,900,1495),22,fill=(20,24,29,255))
