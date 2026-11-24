@@ -1,6 +1,6 @@
 """Claim one public job, render its public-page reel and upload it privately."""
 from pathlib import Path
-import json, os, re, tempfile, urllib.request, urllib.error
+import json, os, re, sys, tempfile, urllib.request, urllib.error
 
 ROOT=Path(__file__).resolve().parents[1]
 # Python adds this script's directory to sys.path when GitHub Actions runs
